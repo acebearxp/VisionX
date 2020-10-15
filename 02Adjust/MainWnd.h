@@ -12,7 +12,8 @@ public:
     BOOL Create();
 protected:
     virtual void OnSize(HWND hwnd, UINT state, int cx, int cy);
+    virtual void OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify);
 private:
-
+    void PickImage();
 };
 

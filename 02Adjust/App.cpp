@@ -36,11 +36,17 @@ void CApp::UnInit()
 
 int CApp::Run(PWSTR pCmdLine, int nCmdShow)
 {
+    HACCEL hAccel = LoadAccelerators(m_hInstance, MAKEINTRESOURCE(IDR_ACCELERATOR));
+
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+        if (!TranslateAccelerator(*m_pwndMain, hAccel, &msg)) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
     }
+
+    DestroyAcceleratorTable(hAccel);
 
     return static_cast<int>(msg.wParam);
 }

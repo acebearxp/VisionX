@@ -26,7 +26,7 @@ ATOM CMainWnd::Register()
     wcls.hCursor = LoadCursor(NULL, IDC_ARROW);
     wcls.lpszClassName = m_wstrClsName.c_str();
     wcls.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_APP));
-    // wcls.lpszMenuName = MAKEINTRESOURCE(IDR_MENU_MAIN);
+    wcls.lpszMenuName = MAKEINTRESOURCE(IDR_MENU_MAIN);
 
     return RegisterClass(&wcls);
 }
@@ -70,4 +70,40 @@ void CMainWnd::OnSize(HWND hwnd, UINT state, int cx, int cy)
 {
     RECT rc;
     GetClientRect(m_hwnd, &rc);
+}
+
+void CMainWnd::OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
+{
+    switch (id)
+    {
+    case ID_FILE_OPEN:
+        PickImage();
+        break;
+    case ID_FILE_EXIT:
+        PostQuitMessage(0);
+        break;
+    default:
+        CXWnd::OnCommand(hwnd, id, hwndCtl, codeNotify);
+        break;
+    }
+}
+
+void CMainWnd::PickImage()
+{
+    wchar_t wcsFile[MAX_PATH] = L"\0";
+
+    OPENFILENAME ofn;
+    ZeroMemory(&ofn, sizeof(OPENFILENAME));
+    ofn.lStructSize = sizeof(OPENFILENAME);
+    ofn.hwndOwner = m_hwnd;
+    ofn.lpstrFilter = L"JPEG(*.jpg;*.jpeg)\0*.jpg;*.jpeg\0\0";
+    ofn.lpstrFile = wcsFile;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.nFilterIndex = 1;
+    ofn.Flags = OFN_FILEMUSTEXIST | OFN_ENABLESIZING | OFN_EXPLORER;
+
+    if (GetOpenFileName(&ofn)) {
+        OutputDebugString(ofn.lpstrFile);
+        // ofn.lpstrFile
+    }
 }
