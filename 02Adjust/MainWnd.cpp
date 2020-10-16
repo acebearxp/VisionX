@@ -6,6 +6,7 @@ CMainWnd::CMainWnd(CApp *pApp)
     :CXWnd(pApp)
 {
     m_wstrClsName.assign(L"MainWnd");
+    m_uptrCC = std::unique_ptr<CamCali>(new CamCali());
 }
 
 
@@ -60,10 +61,23 @@ BOOL CMainWnd::Create()
         }
     }
 
-    RECT rc;
-    GetClientRect(m_hwnd, &rc);
-
     return TRUE;
+}
+
+void CMainWnd::OnPaint(HWND hwnd)
+{
+    RECT rc;
+    GetClientRect(hwnd, &rc);
+
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hwnd, &ps);
+
+    Gdiplus::Graphics g(hdc);
+
+    auto sptrBMP = m_uptrCC->GetBMP();
+    g.DrawImage(sptrBMP.get(), 0, 0);
+
+    EndPaint(hwnd, &ps);
 }
 
 void CMainWnd::OnSize(HWND hwnd, UINT state, int cx, int cy)
@@ -77,7 +91,7 @@ void CMainWnd::OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     switch (id)
     {
     case ID_FILE_OPEN:
-        PickImage();
+        pickImage();
         break;
     case ID_FILE_EXIT:
         PostQuitMessage(0);
@@ -88,7 +102,7 @@ void CMainWnd::OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     }
 }
 
-void CMainWnd::PickImage()
+void CMainWnd::pickImage()
 {
     wchar_t wcsFile[MAX_PATH] = L"\0";
 
@@ -103,7 +117,19 @@ void CMainWnd::PickImage()
     ofn.Flags = OFN_FILEMUSTEXIST | OFN_ENABLESIZING | OFN_EXPLORER;
 
     if (GetOpenFileName(&ofn)) {
-        OutputDebugString(ofn.lpstrFile);
-        // ofn.lpstrFile
+        // convert to multi-bytes
+        char szbuf[MAX_PATH + 1];
+        memset(szbuf, 0, sizeof(szbuf));
+        WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, ofn.lpstrFile, static_cast<int>(wcslen(ofn.lpstrFile)), szbuf, MAX_PATH, NULL, FALSE);
+
+        // reset
+        if (m_uptrCC != nullptr) m_uptrCC.reset();
+
+        // create the CamCali(Camera Calibration)
+        m_uptrCC = std::unique_ptr<CamCali>(new CamCali());
+        m_uptrCC->OpenCameraImage(szbuf);
+
+        // refresh screen
+        InvalidateRect(m_hwnd, NULL, TRUE);
     }
 }

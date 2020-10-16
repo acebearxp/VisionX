@@ -1,6 +1,7 @@
 #pragma once
 #include "XWnd.h"
 #include "resource.h"
+#include "CamCali.h"
 
 class CMainWnd : public CXWnd
 {
@@ -11,9 +12,13 @@ public:
     virtual ATOM Register();
     BOOL Create();
 protected:
-    virtual void OnSize(HWND hwnd, UINT state, int cx, int cy);
-    virtual void OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify);
+    void OnPaint(HWND hwnd) override;
+    void OnSize(HWND hwnd, UINT state, int cx, int cy) override;
+    void OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify) override;
 private:
-    void PickImage();
+    std::unique_ptr<CamCali> m_uptrCC;
+    std::thread m_threadWorking;
+
+    void pickImage();
 };
 

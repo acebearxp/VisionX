@@ -18,6 +18,10 @@ BOOL CApp::Init(HINSTANCE hInstance)
     HRESULT hr = CoInitialize(NULL);
     if (FAILED(hr)) return FALSE;
 
+    // GDI+
+    Gdiplus::GdiplusStartupInput startup;
+    Gdiplus::GdiplusStartup(&m_token, &startup, NULL);
+
     // create MainWnd
     m_pwndMain = new CMainWnd(this);
     if(!m_pwndMain->Create()) return FALSE;
@@ -30,6 +34,8 @@ void CApp::UnInit()
     // destroy MainWnd
     delete m_pwndMain;
     m_pwndMain = NULL;
+
+    Gdiplus::GdiplusShutdown(m_token);
 
     CoUninitialize();
 }

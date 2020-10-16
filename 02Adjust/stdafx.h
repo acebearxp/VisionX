@@ -4,6 +4,13 @@
 #include <windowsx.h>
 #include <Dwmapi.h>
 
+#include <string>
+#include <memory>
+#include <thread>
+
+#include <gdiplus.h>
+#pragma comment(lib, "gdiplus.lib")
+
 #include <opencv2/opencv.hpp>
 
 #pragma comment(lib, "Dwmapi.lib")

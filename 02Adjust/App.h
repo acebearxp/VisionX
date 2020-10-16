@@ -15,6 +15,7 @@ public:
 protected:
     HINSTANCE m_hInstance;
 private:
+    ULONG_PTR m_token;
     CMainWnd* m_pwndMain;
 };
 
