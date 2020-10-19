@@ -64,6 +64,20 @@ BOOL CMainWnd::Create()
     return TRUE;
 }
 
+LRESULT CMainWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+    LRESULT lRet;
+    switch (uMsg)
+    {
+        HANDLE_MSG(hWnd, WM_GETMINMAXINFO, OnGetMinMaxInfo);
+    default:
+        lRet = CXWnd::WndProc(hWnd, uMsg, wParam, lParam);
+        break;
+    }
+
+    return lRet;
+}
+
 void CMainWnd::OnPaint(HWND hwnd)
 {
     RECT rc;
@@ -74,8 +88,18 @@ void CMainWnd::OnPaint(HWND hwnd)
 
     Gdiplus::Graphics g(hdc);
 
-    auto sptrBMP = m_uptrCC->GetBMP();
-    g.DrawImage(sptrBMP.get(), 0, 0);
+    // 分左右栏
+    int posDiv = rc.right - m_nRightWidth;
+    Gdiplus::Pen penBlack(Gdiplus::Color::Black);
+    g.DrawLine(&penBlack, posDiv, 0, posDiv, rc.bottom);
+
+    if (m_bOpened) {
+        // 左栏绘图
+        Gdiplus::Rect rcImage(0, 0, rc.right-m_nRightWidth, rc.bottom);
+        calcRectForImage(rcImage);
+        Gdiplus::Bitmap* pBMP = m_uptrCC->GetBMP();
+        g.DrawImage(pBMP, rcImage);
+    }
 
     EndPaint(hwnd, &ps);
 }
@@ -100,6 +124,12 @@ void CMainWnd::OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
         CXWnd::OnCommand(hwnd, id, hwndCtl, codeNotify);
         break;
     }
+}
+
+void CMainWnd::OnGetMinMaxInfo(HWND hwnd, LPMINMAXINFO lpMinMaxInfo)
+{
+    lpMinMaxInfo->ptMinTrackSize.x = 400;
+    lpMinMaxInfo->ptMinTrackSize.y = 300;
 }
 
 void CMainWnd::pickImage()
@@ -128,8 +158,30 @@ void CMainWnd::pickImage()
         // create the CamCali(Camera Calibration)
         m_uptrCC = std::unique_ptr<CamCali>(new CamCali());
         m_uptrCC->OpenCameraImage(szbuf);
-
+        m_bOpened = true;
         // refresh screen
         InvalidateRect(m_hwnd, NULL, TRUE);
+    }
+}
+
+void CMainWnd::calcRectForImage(Gdiplus::Rect& rc)
+{
+    // 计算图片绘制区域 保持纵横比例不变
+    float fRatioRC = 1.0f * rc.Width / rc.Height;
+
+    Gdiplus::Bitmap *pBMP = m_uptrCC->GetBMP();
+    float fRatioIMG = 1.0f * pBMP->GetWidth() / pBMP->GetHeight();
+
+    if (fRatioRC >= fRatioIMG) {
+        // 绘制区域比图像宽,图像垂直方向占满
+        float fWidth = 1.0f * pBMP->GetWidth() * rc.Height / pBMP->GetHeight();
+        rc.X = static_cast<int>((rc.Width - fWidth) / 2.0f);
+        rc.Width = static_cast<int>(fWidth);
+    }
+    else {
+        // 绘制区域比图像窄,图像水平方向占满
+        float fHeight = 1.0f * pBMP->GetHeight() * rc.Width / pBMP->GetWidth();
+        rc.Y = static_cast<int>((rc.Height - fHeight) / 2.0f);
+        rc.Height = static_cast<int>(fHeight);
     }
 }

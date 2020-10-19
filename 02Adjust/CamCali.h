@@ -10,10 +10,10 @@ public:
 	void OpenCameraImage(const std::string& pathJPG);
 
 	// 获取修正后的图像
-	std::shared_ptr<Gdiplus::Bitmap>& GetBMP();
+	Gdiplus::Bitmap* GetBMP();
 
 	// 修改镜头参数
-	void UpdateCoefficients(cv::Mat& k, cv::Mat& d);
+	void UpdateCoefficients(float f);
 private:
 	// 镜头参数K
 	cv::Mat m_k;
@@ -22,8 +22,10 @@ private:
 
 	// 待修正的图像
 	cv::Mat m_image;
+	// 修正后的图像
+	cv::Mat m_imageOut;
 	// 用于显示到屏幕上
-	std::shared_ptr<Gdiplus::Bitmap> m_sptrBMP;
+	std::unique_ptr<Gdiplus::Bitmap> m_uprtBMP;
 };
 
 
