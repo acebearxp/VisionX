@@ -44,6 +44,15 @@ BOOL CMainWnd::Create()
     WNDCLASS cls;
     if (!GetClassInfo(hInstance, m_wstrClsName.c_str(), &cls)) Register();
 
+    // 字体
+    Gdiplus::FontFamily ff(L"宋体");
+    m_uptrFont = std::unique_ptr<Gdiplus::Font>(new Gdiplus::Font(&ff, 12));
+    // 画刷
+    m_uptrBrush = std::unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::Black));
+    m_uptrBrushFocus = std::unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::Crimson));
+    // 画笔
+    m_uptrPen = std::unique_ptr<Gdiplus::Pen>(new Gdiplus::Pen(Gdiplus::Color::Black));
+
     wstring wstrTitle(L"OpenCV");
     m_hwnd = CreateWindow(m_wstrClsName.c_str(), wstrTitle.c_str(), WS_OVERLAPPEDWINDOW|WS_VISIBLE,
         (cxScreen - width) / 2, (cyScreen - height) / 2, width, height,
@@ -69,6 +78,9 @@ LRESULT CMainWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     LRESULT lRet;
     switch (uMsg)
     {
+        HANDLE_MSG(hWnd, WM_MOUSEMOVE, OnMouseMove);
+        HANDLE_MSG(hWnd, WM_LBUTTONDOWN, OnLButtonDown);
+        HANDLE_MSG(hWnd, WM_LBUTTONUP, OnLButtonUp);
         HANDLE_MSG(hWnd, WM_GETMINMAXINFO, OnGetMinMaxInfo);
     default:
         lRet = CXWnd::WndProc(hWnd, uMsg, wParam, lParam);
@@ -87,11 +99,13 @@ void CMainWnd::OnPaint(HWND hwnd)
     HDC hdc = BeginPaint(hwnd, &ps);
 
     Gdiplus::Graphics g(hdc);
+    
+    // 获取行高
+    if (m_fLineHeight < 0) m_fLineHeight = static_cast<float>(m_uptrFont->GetHeight(&g));
 
     // 分左右栏
     int posDiv = rc.right - m_nRightWidth;
-    Gdiplus::Pen penBlack(Gdiplus::Color::Black);
-    g.DrawLine(&penBlack, posDiv, 0, posDiv, rc.bottom);
+    g.DrawLine(m_uptrPen.get(), posDiv, 0, posDiv, rc.bottom);
 
     if (m_bOpened) {
         // 左栏绘图
@@ -100,6 +114,43 @@ void CMainWnd::OnPaint(HWND hwnd)
         Gdiplus::Bitmap* pBMP = m_uptrCC->GetBMP();
         g.DrawImage(pBMP, rcImage);
     }
+
+    // 右栏调节参数
+    wchar_t wszBuf[64];
+    Gdiplus::Brush* pBrush;
+
+    Gdiplus::PointF point(static_cast<float>(rc.right - m_nRightWidth + m_nMargin), 1.0f * m_nMargin);
+    float fDeltaH = m_fLineHeight + m_nMargin;
+
+    swprintf_s(wszBuf, L"%3s %4.2f", L"焦距", m_fFocus);
+    pBrush = m_nTracking == 0 ? m_uptrBrushFocus.get() : m_uptrBrush.get();
+    g.DrawString(wszBuf, -1, m_uptrFont.get(), point, pBrush);
+
+    for (int i = 0; i < 4; i++) {
+        swprintf_s(wszBuf, L"%4s%d %4.2f", L"K", i + 1, m_fK4[i]);
+        pBrush = m_nTracking == i + 1 ? m_uptrBrushFocus.get() : m_uptrBrush.get();
+        point.Y += fDeltaH;
+        g.DrawString(wszBuf, -1, m_uptrFont.get(), point, pBrush);
+    }
+
+    // 调节滑块
+    const int side = 16; // 滑块边长
+    m_pointA = Gdiplus::Point(rc.right - m_nRightWidth / 2, static_cast<int>(point.Y + fDeltaH));
+    m_pointB = Gdiplus::Point(rc.right - m_nRightWidth / 2, static_cast<int>(rc.bottom - m_nMargin));
+    g.DrawLine(m_uptrPen.get(), m_pointA, m_pointB);
+
+    float fTracking;
+    if (m_nTracking == 0) { // 焦距
+        fTracking = calcFocusPos();
+    }
+    else { // 系数K
+        fTracking = calcKPos(m_nTracking - 1);
+    }
+    float posY = fTracking * (m_pointB.Y - m_pointA.Y - side) + m_pointA.Y;
+
+    m_rcBtn = Gdiplus::Rect(m_pointA.X - side / 2, static_cast<int>(posY), side, side);
+    pBrush = m_bTracking ? m_uptrBrushFocus.get() : m_uptrBrush.get();
+    g.FillRectangle(pBrush, m_rcBtn);
 
     EndPaint(hwnd, &ps);
 }
@@ -130,6 +181,82 @@ void CMainWnd::OnGetMinMaxInfo(HWND hwnd, LPMINMAXINFO lpMinMaxInfo)
 {
     lpMinMaxInfo->ptMinTrackSize.x = 400;
     lpMinMaxInfo->ptMinTrackSize.y = 300;
+}
+
+void CMainWnd::OnLButtonDown(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT keyFlags)
+{
+    if (x >= m_rcBtn.GetLeft() && x <= m_rcBtn.GetRight()
+        && y >= m_rcBtn.GetTop() && y <= m_rcBtn.GetBottom()) {
+        // hit
+        SetCapture(hwnd);
+        m_bTracking = true;
+        m_nTrackingYDelta = m_rcBtn.Y - y;
+
+        RECT rc;
+        rc.left = m_rcBtn.GetLeft();
+        rc.right = m_rcBtn.GetRight();
+        rc.top = m_rcBtn.GetTop();
+        rc.bottom = m_rcBtn.GetBottom();
+        InvalidateRect(hwnd, &rc, TRUE);
+    }
+}
+
+void CMainWnd::OnLButtonUp(HWND hwnd, int x, int y, UINT keyFlags)
+{
+    RECT rc;
+    GetClientRect(hwnd, &rc);
+    if (m_fLineHeight > 0 && x > rc.right - m_nRightWidth) {
+        // 点中了右侧区域
+        int nHit = y / (static_cast<int>(m_fLineHeight) + m_nMargin);
+        if (nHit < 5 && m_nTracking != nHit) {
+            // 切换
+            m_nTracking = nHit;
+            rc.left = rc.right - m_nRightWidth;
+            InvalidateRect(hwnd, &rc, TRUE);
+        }
+    }
+
+    if (m_bTracking) {
+        ReleaseCapture();
+        m_bTracking = false;
+        rc.left = m_rcBtn.GetLeft();
+        rc.right = m_rcBtn.GetRight();
+        rc.top = m_rcBtn.GetTop();
+        rc.bottom = m_rcBtn.GetBottom();
+        InvalidateRect(hwnd, &rc, TRUE);
+    }
+}
+
+void CMainWnd::OnMouseMove(HWND hwnd, int x, int y, UINT keyFlags)
+{
+    if (m_bTracking) {
+        wchar_t buf[64];
+        swprintf_s(buf, L"===> %d : %d\n", m_nTrackingYDelta, y);
+        OutputDebugString(buf);
+
+        int yNew = y + m_nTrackingYDelta;
+
+        bool bChanged = false;
+        if (m_nTracking == 0)
+            bChanged = calcFocusPosBack(yNew);
+        else
+            bChanged = calcKPosBack(yNew);
+
+        if (bChanged) {
+            RECT rc;
+            rc.left = m_rcBtn.GetLeft();
+            rc.right = m_rcBtn.GetRight();
+            rc.top = m_rcBtn.GetTop();
+            rc.bottom = m_rcBtn.GetBottom();
+            InvalidateRect(hwnd, &rc, FALSE);
+
+            GetClientRect(hwnd, &rc);
+            rc.left = rc.right - m_nRightWidth;
+            rc.top = m_nMargin + (m_nMargin + static_cast<int>(m_fLineHeight)) * m_nTracking;
+            rc.bottom = rc.top + m_nMargin + static_cast<int>(m_fLineHeight);
+            InvalidateRect(hwnd, &rc, TRUE);
+        }
+    }
 }
 
 void CMainWnd::pickImage()
@@ -184,4 +311,42 @@ void CMainWnd::calcRectForImage(Gdiplus::Rect& rc)
         rc.Y = static_cast<int>((rc.Height - fHeight) / 2.0f);
         rc.Height = static_cast<int>(fHeight);
     }
+}
+
+float CMainWnd::calcFocusPos()
+{
+    // 1~3000
+    const float min = 1.0f, max = 3000.0f;
+    return (m_fFocus - min) / (max - min);
+}
+
+bool CMainWnd::calcFocusPosBack(int y)
+{
+    // wchar_t buf[64];
+    // swprintf_s(buf, L"===> %d\n", nDeltaY);
+    // OutputDebugString(buf);
+
+    const float min = 1.0f, max = 3000.0f;
+    if (y >= m_pointA.Y && y <= m_pointB.Y) {
+        m_fFocus = (max - min) * (y - m_pointA.Y) / (m_pointB.Y - m_pointA.Y) + min;
+        return true;
+    }
+    return false;
+}
+
+float CMainWnd::calcKPos(int n)
+{
+    // -50~+50
+    const float min = -50.0f, max = 50.0f;
+    return (m_fK4[n]-min) / (max - min);
+}
+
+bool CMainWnd::calcKPosBack(int y)
+{
+    const float min = -50.0f, max = 50.0f;
+    if (y >= m_pointA.Y && y <= m_pointB.Y) {
+        m_fK4[m_nTracking - 1] = (max - min) * (y - m_pointA.Y) / (m_pointB.Y - m_pointA.Y) + min;
+        return true;
+    }
+    return false;
 }

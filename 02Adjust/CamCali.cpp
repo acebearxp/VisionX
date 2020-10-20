@@ -9,7 +9,7 @@ void CamCali::OpenCameraImage(const std::string& pathJPG)
 {
 	m_image = cv::imread(pathJPG);
 
-	UpdateCoefficients(1500.0f);
+	UpdateCoefficients(500.0f);
 }
 
 Gdiplus::Bitmap* CamCali::GetBMP()
