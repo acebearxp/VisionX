@@ -43,8 +43,10 @@ private:
     int m_nTrackingYDelta;
 
     // 系数
+    const float m_fFocusMin = 50.0f, m_fFocusMax = 1500.0f;
     float m_fFocus = 500.0f;
-    std::vector<float> m_fK4 = {2.0f, 3.0f, 1.0f, 0.0f};
+    const float m_fdMin = -2.0f, m_fdMax = 2.0f;
+    std::vector<float> m_fd4 = {0.0f, 0.0f, 0.0f, 0.0f};
 
     // 镜头修正处理对象
     std::unique_ptr<CamCali> m_uptrCC;

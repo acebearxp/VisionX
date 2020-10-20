@@ -127,7 +127,7 @@ void CMainWnd::OnPaint(HWND hwnd)
     g.DrawString(wszBuf, -1, m_uptrFont.get(), point, pBrush);
 
     for (int i = 0; i < 4; i++) {
-        swprintf_s(wszBuf, L"%4s%d %4.2f", L"K", i + 1, m_fK4[i]);
+        swprintf_s(wszBuf, L"%4s%d %4.2f", L"d", i + 1, m_fd4[i]);
         pBrush = m_nTracking == i + 1 ? m_uptrBrushFocus.get() : m_uptrBrush.get();
         point.Y += fDeltaH;
         g.DrawString(wszBuf, -1, m_uptrFont.get(), point, pBrush);
@@ -151,6 +151,15 @@ void CMainWnd::OnPaint(HWND hwnd)
     m_rcBtn = Gdiplus::Rect(m_pointA.X - side / 2, static_cast<int>(posY), side, side);
     pBrush = m_bTracking ? m_uptrBrushFocus.get() : m_uptrBrush.get();
     g.FillRectangle(pBrush, m_rcBtn);
+
+    {
+        RECT rcx;
+        rcx.left = m_rcBtn.GetLeft();
+        rcx.right = m_rcBtn.GetRight();
+        rcx.top = m_rcBtn.GetTop();
+        rcx.bottom = m_rcBtn.GetBottom();
+        InvalidateRect(hwnd, &rcx, FALSE);
+    }
 
     EndPaint(hwnd, &ps);
 }
@@ -230,10 +239,6 @@ void CMainWnd::OnLButtonUp(HWND hwnd, int x, int y, UINT keyFlags)
 void CMainWnd::OnMouseMove(HWND hwnd, int x, int y, UINT keyFlags)
 {
     if (m_bTracking) {
-        wchar_t buf[64];
-        swprintf_s(buf, L"===> %d : %d\n", m_nTrackingYDelta, y);
-        OutputDebugString(buf);
-
         int yNew = y + m_nTrackingYDelta;
 
         bool bChanged = false;
@@ -254,6 +259,10 @@ void CMainWnd::OnMouseMove(HWND hwnd, int x, int y, UINT keyFlags)
             rc.left = rc.right - m_nRightWidth;
             rc.top = m_nMargin + (m_nMargin + static_cast<int>(m_fLineHeight)) * m_nTracking;
             rc.bottom = rc.top + m_nMargin + static_cast<int>(m_fLineHeight);
+            InvalidateRect(hwnd, &rc, TRUE);
+
+            GetClientRect(hwnd, &rc);
+            rc.right = rc.right - m_nRightWidth;
             InvalidateRect(hwnd, &rc, TRUE);
         }
     }
@@ -286,6 +295,7 @@ void CMainWnd::pickImage()
         m_uptrCC = std::unique_ptr<CamCali>(new CamCali());
         m_uptrCC->OpenCameraImage(szbuf);
         m_bOpened = true;
+        m_uptrCC->UpdateCoefficients(m_fFocus, m_fd4);
         // refresh screen
         InvalidateRect(m_hwnd, NULL, TRUE);
     }
@@ -315,20 +325,17 @@ void CMainWnd::calcRectForImage(Gdiplus::Rect& rc)
 
 float CMainWnd::calcFocusPos()
 {
-    // 1~3000
-    const float min = 1.0f, max = 3000.0f;
-    return (m_fFocus - min) / (max - min);
+    // 50~1500
+    return (m_fFocus - m_fFocusMin) / (m_fFocusMax - m_fFocusMin);
 }
 
 bool CMainWnd::calcFocusPosBack(int y)
 {
-    // wchar_t buf[64];
-    // swprintf_s(buf, L"===> %d\n", nDeltaY);
-    // OutputDebugString(buf);
-
-    const float min = 1.0f, max = 3000.0f;
+    // 50~1500
     if (y >= m_pointA.Y && y <= m_pointB.Y) {
-        m_fFocus = (max - min) * (y - m_pointA.Y) / (m_pointB.Y - m_pointA.Y) + min;
+        m_fFocus = (m_fFocusMax - m_fFocusMin) * (y - m_pointA.Y) / (m_pointB.Y - m_pointA.Y) + m_fFocusMin;
+        if(m_bOpened)
+            m_uptrCC->UpdateCoefficients(m_fFocus, m_fd4);
         return true;
     }
     return false;
@@ -336,16 +343,17 @@ bool CMainWnd::calcFocusPosBack(int y)
 
 float CMainWnd::calcKPos(int n)
 {
-    // -50~+50
-    const float min = -50.0f, max = 50.0f;
-    return (m_fK4[n]-min) / (max - min);
+    // -2~+2
+    return (m_fd4[n] - m_fdMin) / (m_fdMax - m_fdMin);
 }
 
 bool CMainWnd::calcKPosBack(int y)
 {
-    const float min = -50.0f, max = 50.0f;
+    // -2~+2
     if (y >= m_pointA.Y && y <= m_pointB.Y) {
-        m_fK4[m_nTracking - 1] = (max - min) * (y - m_pointA.Y) / (m_pointB.Y - m_pointA.Y) + min;
+        m_fd4[m_nTracking - 1] = (m_fdMax - m_fdMin) * (y - m_pointA.Y) / (m_pointB.Y - m_pointA.Y) + m_fdMin;
+        if (m_bOpened)
+            m_uptrCC->UpdateCoefficients(m_fFocus, m_fd4);
         return true;
     }
     return false;
