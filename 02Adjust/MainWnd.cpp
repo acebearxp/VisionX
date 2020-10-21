@@ -50,6 +50,7 @@ BOOL CMainWnd::Create()
     m_uptrFont = std::unique_ptr<Gdiplus::Font>(new Gdiplus::Font(&ff, 12));
     // 画刷
     m_uptrBrush = std::unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::Black));
+    m_uptrBrushBK = std::unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::WhiteSmoke));
     m_uptrBrushFocus = std::unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::Crimson));
     // 画笔
     m_uptrPen = std::unique_ptr<Gdiplus::Pen>(new Gdiplus::Pen(Gdiplus::Color::Black));
@@ -79,6 +80,7 @@ LRESULT CMainWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     LRESULT lRet;
     switch (uMsg)
     {
+        HANDLE_MSG(hWnd, WM_ERASEBKGND, OnEraseBkgnd);
         HANDLE_MSG(hWnd, WM_MOUSEMOVE, OnMouseMove);
         HANDLE_MSG(hWnd, WM_LBUTTONDOWN, OnLButtonDown);
         HANDLE_MSG(hWnd, WM_LBUTTONUP, OnLButtonUp);
@@ -102,16 +104,40 @@ LRESULT CMainWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     return lRet;
 }
 
+BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
+{
+    BOOL bRet = CXWnd::OnCreate(hwnd, lpCreateStruct);
+
+    // 最大可能的桌面尺寸
+    int maxWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    int maxHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+    // 双缓冲
+    HDC hdc = GetDC(hwnd);
+    m_hdcMem = CreateCompatibleDC(hdc);
+    m_hBmp = CreateCompatibleBitmap(hdc, maxWidth, maxHeight);
+    SelectObject(m_hdcMem, m_hBmp);
+    ReleaseDC(hwnd, hdc);
+
+    return bRet;
+}
+
+void CMainWnd::OnDestroy(HWND hwnd)
+{
+    DeleteObject(m_hBmp);
+    ReleaseDC(hwnd, m_hdcMem);
+    CXWnd::OnDestroy(hwnd);
+}
+
 void CMainWnd::OnPaint(HWND hwnd)
 {
     RECT rc;
     GetClientRect(hwnd, &rc);
 
-    PAINTSTRUCT ps;
-    HDC hdc = BeginPaint(hwnd, &ps);
-
-    Gdiplus::Graphics g(hdc);
+    Gdiplus::Graphics g(m_hdcMem);
     
+    g.FillRectangle(m_uptrBrushBK.get(), 0, 0, rc.right, rc.bottom);
+
     // 获取行高
     if (m_fLineHeight < 0) m_fLineHeight = static_cast<float>(m_uptrFont->GetHeight(&g));
 
@@ -174,7 +200,15 @@ void CMainWnd::OnPaint(HWND hwnd)
         InvalidateRect(hwnd, &rcx, FALSE);
     }
 
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hwnd, &ps);
+    BitBlt(hdc, 0, 0, rc.right, rc.bottom, m_hdcMem, 0, 0, SRCCOPY);
     EndPaint(hwnd, &ps);
+}
+
+BOOL CMainWnd::OnEraseBkgnd(HWND hwnd, HDC hdc)
+{
+    return TRUE;
 }
 
 void CMainWnd::OnSize(HWND hwnd, UINT state, int cx, int cy)

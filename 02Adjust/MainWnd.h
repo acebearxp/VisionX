@@ -14,7 +14,10 @@ public:
 protected:
     LRESULT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) override;
 
+    BOOL OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct) override;
+    void OnDestroy(HWND hwnd) override;
     void OnPaint(HWND hwnd) override;
+    BOOL OnEraseBkgnd(HWND hwnd, HDC hdc);
     void OnSize(HWND hwnd, UINT state, int cx, int cy) override;
     void OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify) override;
 
@@ -29,8 +32,11 @@ private:
     float m_fLineHeight = -1.0f; // 行高,字体相关
 
     // GDI+资源
+    HDC m_hdcMem;
+    HBITMAP m_hBmp;
     std::unique_ptr<Gdiplus::Font> m_uptrFont;
     std::unique_ptr<Gdiplus::SolidBrush> m_uptrBrush;
+    std::unique_ptr<Gdiplus::SolidBrush> m_uptrBrushBK;
     std::unique_ptr<Gdiplus::SolidBrush> m_uptrBrushFocus;
     std::unique_ptr<Gdiplus::Pen> m_uptrPen;
 
@@ -44,8 +50,8 @@ private:
 
     // 系数
     const float m_fFocusMin = 50.0f, m_fFocusMax = 1500.0f;
-    float m_fFocus = 500.0f;
-    const float m_fdMin = -2.0f, m_fdMax = 2.0f;
+    float m_fFocus = 800.0f;
+    const float m_fdMin = -5.0f, m_fdMax = 5.0f;
     std::vector<float> m_fd4 = {0.0f, 0.0f, 0.0f, 0.0f};
 
     // 镜头修正处理对象
