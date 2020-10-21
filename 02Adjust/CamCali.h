@@ -5,15 +5,17 @@ class CamCali
 {
 public:
 	CamCali();
+	~CamCali();
 
 	// 打开带有畸变的图像文件
-	void OpenCameraImage(const std::string& pathJPG);
+	void OpenCameraImage(const std::string& pathJPG, std::function<void()> const& fnUpdated);
 
 	// 获取修正后的图像
-	Gdiplus::Bitmap* GetBMP();
+	Gdiplus::Bitmap* LockBMP();
+	void UnlockBMP(Gdiplus::Bitmap* pBMP);
 
 	// 修改镜头参数
-	void UpdateCoefficients(float f, const std::vector<float>& k);
+	void UpdateCoefficients(float f, const std::vector<float>& d);
 private:
 	// 镜头参数K
 	cv::Mat m_k;
@@ -27,6 +29,13 @@ private:
 	cv::Mat m_imageOut;
 	// 用于显示到屏幕上
 	std::unique_ptr<Gdiplus::Bitmap> m_uprtBMP;
+
+	std::thread m_thread;
+	HANDLE m_evPuls;
+	std::atomic_bool m_atomQuit;
+	CRITICAL_SECTION m_csKD;
+
+	void doWork(std::function<void()> const& fnUpdated);
 };
 
 

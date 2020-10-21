@@ -2,11 +2,12 @@
 #include "MainWnd.h"
 #include "App.h"
 
+#define WM_MY_UPDATE WM_USER+0
+
 CMainWnd::CMainWnd(CApp *pApp)
     :CXWnd(pApp)
 {
     m_wstrClsName.assign(L"MainWnd");
-    m_uptrCC = std::unique_ptr<CamCali>(new CamCali());
 }
 
 
@@ -82,6 +83,17 @@ LRESULT CMainWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         HANDLE_MSG(hWnd, WM_LBUTTONDOWN, OnLButtonDown);
         HANDLE_MSG(hWnd, WM_LBUTTONUP, OnLButtonUp);
         HANDLE_MSG(hWnd, WM_GETMINMAXINFO, OnGetMinMaxInfo);
+    case WM_MY_UPDATE:
+        {
+            m_bOpened = true;
+            // 更新图像
+            RECT rc;
+            GetClientRect(hWnd, &rc);
+            rc.right -= m_nRightWidth;
+            InvalidateRect(hWnd, &rc, FALSE);
+            lRet = 0L;
+        }
+        break;
     default:
         lRet = CXWnd::WndProc(hWnd, uMsg, wParam, lParam);
         break;
@@ -111,8 +123,9 @@ void CMainWnd::OnPaint(HWND hwnd)
         // 左栏绘图
         Gdiplus::Rect rcImage(0, 0, rc.right-m_nRightWidth, rc.bottom);
         calcRectForImage(rcImage);
-        Gdiplus::Bitmap* pBMP = m_uptrCC->GetBMP();
+        Gdiplus::Bitmap* pBMP = m_uptrCC->LockBMP();
         g.DrawImage(pBMP, rcImage);
+        m_uptrCC->UnlockBMP(pBMP);
     }
 
     // 右栏调节参数
@@ -260,10 +273,6 @@ void CMainWnd::OnMouseMove(HWND hwnd, int x, int y, UINT keyFlags)
             rc.top = m_nMargin + (m_nMargin + static_cast<int>(m_fLineHeight)) * m_nTracking;
             rc.bottom = rc.top + m_nMargin + static_cast<int>(m_fLineHeight);
             InvalidateRect(hwnd, &rc, TRUE);
-
-            GetClientRect(hwnd, &rc);
-            rc.right = rc.right - m_nRightWidth;
-            InvalidateRect(hwnd, &rc, TRUE);
         }
     }
 }
@@ -289,15 +298,16 @@ void CMainWnd::pickImage()
         WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, ofn.lpstrFile, static_cast<int>(wcslen(ofn.lpstrFile)), szbuf, MAX_PATH, NULL, FALSE);
 
         // reset
+        m_bOpened = false;
         if (m_uptrCC != nullptr) m_uptrCC.reset();
 
         // create the CamCali(Camera Calibration)
         m_uptrCC = std::unique_ptr<CamCali>(new CamCali());
-        m_uptrCC->OpenCameraImage(szbuf);
-        m_bOpened = true;
+        m_uptrCC->OpenCameraImage(szbuf, [=]() {
+            PostMessage(m_hwnd, WM_MY_UPDATE, 0, 0);
+            OutputDebugString(L"====> Yes!\n");
+        });
         m_uptrCC->UpdateCoefficients(m_fFocus, m_fd4);
-        // refresh screen
-        InvalidateRect(m_hwnd, NULL, TRUE);
     }
 }
 
@@ -306,7 +316,7 @@ void CMainWnd::calcRectForImage(Gdiplus::Rect& rc)
     // 计算图片绘制区域 保持纵横比例不变
     float fRatioRC = 1.0f * rc.Width / rc.Height;
 
-    Gdiplus::Bitmap *pBMP = m_uptrCC->GetBMP();
+    Gdiplus::Bitmap *pBMP = m_uptrCC->LockBMP();
     float fRatioIMG = 1.0f * pBMP->GetWidth() / pBMP->GetHeight();
 
     if (fRatioRC >= fRatioIMG) {
@@ -321,6 +331,7 @@ void CMainWnd::calcRectForImage(Gdiplus::Rect& rc)
         rc.Y = static_cast<int>((rc.Height - fHeight) / 2.0f);
         rc.Height = static_cast<int>(fHeight);
     }
+    m_uptrCC->UnlockBMP(pBMP);
 }
 
 float CMainWnd::calcFocusPos()
