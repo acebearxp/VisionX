@@ -3,22 +3,18 @@
 #include "App.h"
 
 #define WM_MY_UPDATE WM_USER+0
+const wchar_t CMainWnd::c_wszClsName[] = L"CMainWnd";
 
-CMainWnd::CMainWnd(CApp *pApp)
-    :CXWnd(pApp)
+CMainWnd::CMainWnd()
 {
-    m_wstrClsName.assign(L"MainWnd");
 }
-
 
 CMainWnd::~CMainWnd()
 {
 }
 
-ATOM CMainWnd::Register()
+ATOM CMainWnd::Register(HINSTANCE hInstance)
 {
-    HINSTANCE hInstance = m_pApp->GetInstance();
-
     WNDCLASS wcls;
     ZeroMemory(&wcls, sizeof(WNDCLASS));
     wcls.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
@@ -26,37 +22,25 @@ ATOM CMainWnd::Register()
     wcls.hInstance = hInstance;
     wcls.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
     wcls.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wcls.lpszClassName = m_wstrClsName.c_str();
+    wcls.lpszClassName = c_wszClsName;
     wcls.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_APP));
     wcls.lpszMenuName = MAKEINTRESOURCE(IDR_MENU_MAIN);
 
     return RegisterClass(&wcls);
 }
 
-BOOL CMainWnd::Create()
+BOOL CMainWnd::Create(HINSTANCE hInstance)
 {
     int cxScreen = GetSystemMetrics(SM_CXSCREEN);
     int cyScreen = GetSystemMetrics(SM_CYSCREEN);
     int width = cxScreen > 800 ? 800 : cxScreen;
     int height = cyScreen > 600 ? 600 : cyScreen;
 
-    HINSTANCE hInstance = m_pApp->GetInstance();
-
     WNDCLASS cls;
-    if (!GetClassInfo(hInstance, m_wstrClsName.c_str(), &cls)) Register();
+    if (!GetClassInfo(hInstance, c_wszClsName, &cls)) Register(hInstance);
 
-    // 字体
-    Gdiplus::FontFamily ff(L"宋体");
-    m_uptrFont = std::unique_ptr<Gdiplus::Font>(new Gdiplus::Font(&ff, 12));
-    // 画刷
-    m_uptrBrush = std::unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::Black));
-    m_uptrBrushBK = std::unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::WhiteSmoke));
-    m_uptrBrushFocus = std::unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::Crimson));
-    // 画笔
-    m_uptrPen = std::unique_ptr<Gdiplus::Pen>(new Gdiplus::Pen(Gdiplus::Color::Black));
-
-    wstring wstrTitle(L"OpenCV");
-    m_hwnd = CreateWindow(m_wstrClsName.c_str(), wstrTitle.c_str(), WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+    wstring wstrTitle(L"FishEye Camera");
+    m_hwnd = CreateWindow(c_wszClsName, wstrTitle.c_str(), WS_OVERLAPPEDWINDOW|WS_VISIBLE,
         (cxScreen - width) / 2, (cyScreen - height) / 2, width, height,
         NULL, NULL, hInstance, this);
     if (!m_hwnd) {
@@ -84,15 +68,13 @@ LRESULT CMainWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         HANDLE_MSG(hWnd, WM_MOUSEMOVE, OnMouseMove);
         HANDLE_MSG(hWnd, WM_LBUTTONDOWN, OnLButtonDown);
         HANDLE_MSG(hWnd, WM_LBUTTONUP, OnLButtonUp);
+        HANDLE_MSG(hWnd, WM_SIZE, OnSize);
         HANDLE_MSG(hWnd, WM_GETMINMAXINFO, OnGetMinMaxInfo);
     case WM_MY_UPDATE:
         {
             m_bOpened = true;
             // 更新图像
-            RECT rc;
-            GetClientRect(hWnd, &rc);
-            rc.right -= m_nRightWidth;
-            InvalidateRect(hWnd, &rc, FALSE);
+            InvalidateRect(hWnd, nullptr, FALSE);
             lRet = 0L;
         }
         break;
@@ -108,25 +90,31 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 {
     BOOL bRet = CXWnd::OnCreate(hwnd, lpCreateStruct);
 
-    // 最大可能的桌面尺寸
-    int maxWidth = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-    int maxHeight = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-
     // 双缓冲
     HDC hdc = GetDC(hwnd);
     m_hdcMem = CreateCompatibleDC(hdc);
-    m_hBmp = CreateCompatibleBitmap(hdc, maxWidth, maxHeight);
-    SelectObject(m_hdcMem, m_hBmp);
     ReleaseDC(hwnd, hdc);
+
+    // 字体
+    Gdiplus::FontFamily ff(L"宋体");
+    m_uptrFont = std::unique_ptr<Gdiplus::Font>(new Gdiplus::Font(&ff, 12));
+    // 画刷
+    m_uptrBrush = std::unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::Black));
+    m_uptrBrushBK = std::unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::WhiteSmoke));
+    m_uptrBrushFocus = std::unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::Crimson));
+    // 画笔
+    m_uptrPen = std::unique_ptr<Gdiplus::Pen>(new Gdiplus::Pen(Gdiplus::Color::Black));
 
     return bRet;
 }
 
 void CMainWnd::OnDestroy(HWND hwnd)
 {
-    DeleteObject(m_hBmp);
     ReleaseDC(hwnd, m_hdcMem);
+    DeleteBitmap(m_hBmpMem);
     CXWnd::OnDestroy(hwnd);
+
+    PostQuitMessage(0);
 }
 
 void CMainWnd::OnPaint(HWND hwnd)
@@ -135,7 +123,6 @@ void CMainWnd::OnPaint(HWND hwnd)
     GetClientRect(hwnd, &rc);
 
     Gdiplus::Graphics g(m_hdcMem);
-    
     g.FillRectangle(m_uptrBrushBK.get(), 0, 0, rc.right, rc.bottom);
 
     // 获取行高
@@ -191,15 +178,6 @@ void CMainWnd::OnPaint(HWND hwnd)
     pBrush = m_bTracking ? m_uptrBrushFocus.get() : m_uptrBrush.get();
     g.FillRectangle(pBrush, m_rcBtn);
 
-    {
-        RECT rcx;
-        rcx.left = m_rcBtn.GetLeft();
-        rcx.right = m_rcBtn.GetRight();
-        rcx.top = m_rcBtn.GetTop();
-        rcx.bottom = m_rcBtn.GetBottom();
-        InvalidateRect(hwnd, &rcx, FALSE);
-    }
-
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hwnd, &ps);
     BitBlt(hdc, 0, 0, rc.right, rc.bottom, m_hdcMem, 0, 0, SRCCOPY);
@@ -213,8 +191,10 @@ BOOL CMainWnd::OnEraseBkgnd(HWND hwnd, HDC hdc)
 
 void CMainWnd::OnSize(HWND hwnd, UINT state, int cx, int cy)
 {
-    RECT rc;
-    GetClientRect(m_hwnd, &rc);
+    HDC hdc = GetDC(hwnd);
+    m_hBmpMem = CreateCompatibleBitmap(hdc, cx, cy);
+    HBITMAP hBmpOld = SelectBitmap(m_hdcMem, m_hBmpMem);
+    DeleteBitmap(hBmpOld);
 }
 
 void CMainWnd::OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
@@ -225,7 +205,7 @@ void CMainWnd::OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
         pickImage();
         break;
     case ID_FILE_EXIT:
-        PostQuitMessage(0);
+        SendMessage(hwnd, WM_CLOSE, 0, 0);
         break;
     default:
         CXWnd::OnCommand(hwnd, id, hwndCtl, codeNotify);
@@ -248,12 +228,7 @@ void CMainWnd::OnLButtonDown(HWND hwnd, BOOL fDoubleClick, int x, int y, UINT ke
         m_bTracking = true;
         m_nTrackingYDelta = m_rcBtn.Y - y;
 
-        RECT rc;
-        rc.left = m_rcBtn.GetLeft();
-        rc.right = m_rcBtn.GetRight();
-        rc.top = m_rcBtn.GetTop();
-        rc.bottom = m_rcBtn.GetBottom();
-        InvalidateRect(hwnd, &rc, TRUE);
+        InvalidateRect(hwnd, nullptr, TRUE);
     }
 }
 
@@ -267,19 +242,14 @@ void CMainWnd::OnLButtonUp(HWND hwnd, int x, int y, UINT keyFlags)
         if (nHit < 5 && m_nTracking != nHit) {
             // 切换
             m_nTracking = nHit;
-            rc.left = rc.right - m_nRightWidth;
-            InvalidateRect(hwnd, &rc, TRUE);
+            InvalidateRect(hwnd, nullptr, TRUE);
         }
     }
 
     if (m_bTracking) {
         ReleaseCapture();
         m_bTracking = false;
-        rc.left = m_rcBtn.GetLeft();
-        rc.right = m_rcBtn.GetRight();
-        rc.top = m_rcBtn.GetTop();
-        rc.bottom = m_rcBtn.GetBottom();
-        InvalidateRect(hwnd, &rc, TRUE);
+        InvalidateRect(hwnd, nullptr, TRUE);
     }
 }
 
@@ -294,20 +264,8 @@ void CMainWnd::OnMouseMove(HWND hwnd, int x, int y, UINT keyFlags)
         else
             bChanged = calcKPosBack(yNew);
 
-        if (bChanged) {
-            RECT rc;
-            rc.left = m_rcBtn.GetLeft();
-            rc.right = m_rcBtn.GetRight();
-            rc.top = m_rcBtn.GetTop();
-            rc.bottom = m_rcBtn.GetBottom();
-            InvalidateRect(hwnd, &rc, FALSE);
-
-            GetClientRect(hwnd, &rc);
-            rc.left = rc.right - m_nRightWidth;
-            rc.top = m_nMargin + (m_nMargin + static_cast<int>(m_fLineHeight)) * m_nTracking;
-            rc.bottom = rc.top + m_nMargin + static_cast<int>(m_fLineHeight);
-            InvalidateRect(hwnd, &rc, TRUE);
-        }
+        if (bChanged)
+            InvalidateRect(hwnd, nullptr, FALSE);
     }
 }
 
@@ -339,7 +297,6 @@ void CMainWnd::pickImage()
         m_uptrCC = std::unique_ptr<CamCali>(new CamCali());
         m_uptrCC->OpenCameraImage(szbuf, [=]() {
             PostMessage(m_hwnd, WM_MY_UPDATE, 0, 0);
-            OutputDebugString(L"====> Yes!\n");
         });
         m_uptrCC->UpdateCoefficients(m_fFocus, m_fd4);
     }

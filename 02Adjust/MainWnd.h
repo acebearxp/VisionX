@@ -3,14 +3,14 @@
 #include "resource.h"
 #include "CamCali.h"
 
-class CMainWnd : public CXWnd
+class CMainWnd final: public CXWnd
 {
 public:
-    CMainWnd(CApp *pApp);
+    CMainWnd();
     virtual ~CMainWnd();
 
-    virtual ATOM Register();
-    BOOL Create();
+    virtual ATOM Register(HINSTANCE hInstance);
+    BOOL Create(HINSTANCE hInstance);
 protected:
     LRESULT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) override;
 
@@ -18,7 +18,7 @@ protected:
     void OnDestroy(HWND hwnd) override;
     void OnPaint(HWND hwnd) override;
     BOOL OnEraseBkgnd(HWND hwnd, HDC hdc);
-    void OnSize(HWND hwnd, UINT state, int cx, int cy) override;
+    void OnSize(HWND hwnd, UINT state, int cx, int cy);
     void OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify) override;
 
     void OnGetMinMaxInfo(HWND hwnd, LPMINMAXINFO lpMinMaxInfo);
@@ -26,6 +26,7 @@ protected:
     void OnLButtonUp(HWND hwnd, int x, int y, UINT keyFlags);
     void OnMouseMove(HWND hwnd, int x, int y, UINT keyFlags);
 private:
+    static const wchar_t c_wszClsName[];
     // 尺寸系数
     const int m_nRightWidth = 200; // 右栏分割宽度
     const int m_nMargin = 4; // 边距
@@ -33,7 +34,7 @@ private:
 
     // GDI+资源
     HDC m_hdcMem;
-    HBITMAP m_hBmp;
+    HBITMAP m_hBmpMem;
     std::unique_ptr<Gdiplus::Font> m_uptrFont;
     std::unique_ptr<Gdiplus::SolidBrush> m_uptrBrush;
     std::unique_ptr<Gdiplus::SolidBrush> m_uptrBrushBK;
