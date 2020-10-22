@@ -57,6 +57,10 @@ LRESULT CMainWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         HANDLE_MSG(hWnd, WM_ERASEBKGND, OnEraseBkgnd);
         HANDLE_MSG(hWnd, WM_SIZE, OnSize);
         HANDLE_MSG(hWnd, WM_GETMINMAXINFO, OnGetMinMaxInfo);
+    case WM_USER:
+        InvalidateRect(hWnd, nullptr, TRUE);
+        lRet = 0;
+        break;
     default:
         lRet = CXWnd::WndProc(hWnd, uMsg, wParam, lParam);
         break;
@@ -76,11 +80,22 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 
     m_uptrBrushBK = unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::WhiteSmoke));
 
+    // 创建工作线程
+    InitializeCriticalSection(&m_cs);
+    m_evPuls = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    m_thread = thread(&CMainWnd::doWork, this);
+
     return bRet;
 }
 
 void CMainWnd::OnDestroy(HWND hwnd)
 {
+    m_atomQuit = false;
+    SetEvent(m_evPuls);
+    m_thread.join();
+    CloseHandle(m_evPuls);
+    DeleteCriticalSection(&m_cs);
+
     ReleaseDC(hwnd, m_hdcMem);
     DeleteBitmap(m_hBmpMem);
     CXWnd::OnDestroy(hwnd);
@@ -120,7 +135,7 @@ void CMainWnd::OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     switch (id)
     {
     case ID_FILE_OPEN:
-        pickImage();
+        pickImages();
         break;
     case ID_FILE_EXIT:
         SendMessage(hwnd, WM_CLOSE, 0, 0);
@@ -137,9 +152,10 @@ void CMainWnd::OnGetMinMaxInfo(HWND hwnd, LPMINMAXINFO lpMinMaxInfo)
     lpMinMaxInfo->ptMinTrackSize.y = 300;
 }
 
-void CMainWnd::pickImage()
+void CMainWnd::pickImages()
 {
-    wchar_t wcsFile[MAX_PATH] = L"\0";
+    const int MAX_LEN = MAX_PATH * 2 + 1;
+    wchar_t wcsFile[MAX_LEN] = L"\0";
 
     OPENFILENAME ofn;
     ZeroMemory(&ofn, sizeof(OPENFILENAME));
@@ -147,15 +163,50 @@ void CMainWnd::pickImage()
     ofn.hwndOwner = m_hwnd;
     ofn.lpstrFilter = L"JPEG(*.jpg;*.jpeg)\0*.jpg;*.jpeg\0\0";
     ofn.lpstrFile = wcsFile;
-    ofn.nMaxFile = MAX_PATH;
+    ofn.nMaxFile = MAX_LEN;
     ofn.nFilterIndex = 1;
-    ofn.Flags = OFN_FILEMUSTEXIST | OFN_ENABLESIZING | OFN_EXPLORER;
+    ofn.Flags = OFN_FILEMUSTEXIST | OFN_ENABLESIZING | OFN_EXPLORER | OFN_ALLOWMULTISELECT;
 
     if (GetOpenFileName(&ofn)) {
-        // convert to multi-bytes
-        char szbuf[MAX_PATH + 1];
-        memset(szbuf, 0, sizeof(szbuf));
-        WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, ofn.lpstrFile, static_cast<int>(wcslen(ofn.lpstrFile)), szbuf, MAX_PATH, NULL, FALSE);
+        // 多选文件,双0结尾
+        vector<wstring> selected;
+        wchar_t* pStart = ofn.lpstrFile;
+        while (*pStart != L'\0') {
+            // convert to multi-bytes
+            // WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, pStart, -1, szbuf, MAX_PATH * 2, NULL, FALSE);
+            selected.push_back(pStart);
+            pStart += wcslen(pStart) + 1;
+        }
+
+        // 用于剔除重复项
+        auto append_unique = [this](const wstring & x) {
+            for (auto s : m_vImagePaths) {
+                if (x == s) return;
+            }
+            m_vImagePaths.push_back(x);
+        };
+
+        size_t nBefore, nAfter;
+        {
+            EnterCriticalSection(&m_cs);
+            nBefore = m_vImagePaths.size();
+            if (selected.size() == 1) {
+                append_unique(selected[0]);
+            }
+            else {
+                for (int i = 1; i < selected.size(); i++) {
+                    swprintf_s(wcsFile, L"%s\\%s", selected[0].c_str(), selected[i].c_str());
+                    append_unique(wcsFile);
+                }
+            }
+            nAfter = m_vImagePaths.size();
+            LeaveCriticalSection(&m_cs);
+        }
+        if (nAfter > nBefore) {
+            // 激活工作线程
+            m_atomJob = true;
+            SetEvent(m_evPuls);
+        }
     }
 }
 
@@ -179,4 +230,30 @@ void CMainWnd::calcRectForImage(Gdiplus::Rect& rc)
         rc.Y = static_cast<int>((rc.Height - fHeight) / 2.0f);
         rc.Height = static_cast<int>(fHeight);
     }
+}
+
+void CMainWnd::doWork()
+{
+    do {
+        OutputDebugString(L"===> Puls...\n");
+
+        if (m_atomJob) {
+            vector<wstring> vImagePaths;
+            EnterCriticalSection(&m_cs);
+            vImagePaths = m_vImagePaths;
+            LeaveCriticalSection(&m_cs);
+
+            wchar_t buf[4096];
+            int nWritten = 0;
+            for (auto s : vImagePaths) {
+                nWritten += swprintf_s(buf + nWritten, sizeof(buf)/sizeof(wchar_t) - nWritten, L"===> %s\n", s.c_str());
+            }
+            OutputDebugString(buf);
+        }
+        PostMessage(m_hwnd, WM_USER, 0, 0);
+        OutputDebugString(L"===> Wait...\n");
+        WaitForSingleObject(m_evPuls, INFINITE);
+    }
+    while (!m_atomQuit);
+    OutputDebugString(L"===> Quit...\n");
 }

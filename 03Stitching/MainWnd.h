@@ -30,9 +30,27 @@ private:
     HBITMAP m_hBmpMem;
     unique_ptr<Gdiplus::SolidBrush> m_uptrBrushBK;
 
+    // 后台工作线程
+    thread m_thread;
+    // 信号事件
+    HANDLE m_evPuls;
+    // 退出标志
+    atomic_bool m_atomQuit;
+    // 任务标志
+    atomic_bool m_atomJob;
+
+    // 保护区
+    CRITICAL_SECTION m_cs;
+    // 文件路径
+    vector<wstring> m_vImagePaths;
+    // 被显示的图像
+    vector<Gdiplus::Bitmap*> m_vptrBitmaps;
+
     // 打开图像
-    void pickImage();
+    void pickImages();
     // 计算图像绘制区域
     void calcRectForImage(Gdiplus::Rect& rc);
+    // 工作线程
+    void doWork();
 };
 
