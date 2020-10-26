@@ -19,8 +19,18 @@ public:
 
 	// 加载所有图像
 	void LoadAll(const vector<string> & vPaths);
+
+	// 鱼眼校正
+	void CalibrateForFisheye();
+
+	// 图像配准
+	void SpaceMatching();
 private:
 	// 每张图像对应一个TeaPot
 	vector<unique_ptr<TeaPot>> m_vuptrTeaPots;
+
+	// 镜头校正参数
+	float m_fFocus = 283.65f;
+	vector<float> m_fD = vector<float>{ -0.05f, 0.0f, 0.0f, 0.0f };
 };
 

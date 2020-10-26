@@ -15,3 +15,15 @@ void Mate40::LoadAll(const vector<string>& vPaths)
 		uptrTeaPot->LoadImage();
 	}
 }
+
+void Mate40::CalibrateForFisheye()
+{
+	// гублаЃе§
+	for (const auto& uptrTeaPot : m_vuptrTeaPots) {
+		uptrTeaPot->Calibrate(m_fFocus, m_fD);
+	}
+}
+
+void Mate40::SpaceMatching()
+{
+}

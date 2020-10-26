@@ -123,9 +123,9 @@ void CMainWnd::OnPaint(HWND hwnd)
         const auto& vuptrTeaPots = m_mate40.GetTeaPots();
         for (const auto& uptrTeaPot : vuptrTeaPots) {
             Gdiplus::Rect rcBmp(rc.left + width * i, y, width, height);
-            const auto& uptrBMP = uptrTeaPot->GetBMP();
-            resizeRectForImage(uptrBMP, rcBmp);
-            g.DrawImage(uptrBMP.get(), rcBmp);
+            const auto& uptrBmp = uptrTeaPot->GetBMP();
+            resizeRectForImage(uptrBmp, rcBmp);
+            g.DrawImage(uptrBmp.get(), rcBmp);
             i++;
         }
     }
@@ -263,7 +263,14 @@ void CMainWnd::doWork()
             m_atomJob = false;
 
             vector<string> vImagePathsA = convert(vImagePathsW);
+            // 装载图像
             m_mate40.LoadAll(vImagePathsA);
+
+            // 鱼眼校正
+            m_mate40.CalibrateForFisheye();
+
+            // 图像配准
+            m_mate40.SpaceMatching();
 
             LeaveCriticalSection(&m_cs);
         }
