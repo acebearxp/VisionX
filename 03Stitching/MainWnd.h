@@ -30,6 +30,7 @@ private:
     HDC m_hdcMem;
     HBITMAP m_hBmpMem;
     unique_ptr<Gdiplus::SolidBrush> m_uptrBrushBK;
+    unique_ptr<Gdiplus::Pen> m_uptrPen;
 
     // 关键处理对象
     Mate40 m_mate40;
@@ -50,6 +51,8 @@ private:
 
     // 打开图像
     void pickImages();
+    // 关闭图像
+    void clearImages();
     // 工作线程
     void doWork();
     // wstring to string

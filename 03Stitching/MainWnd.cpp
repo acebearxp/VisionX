@@ -79,6 +79,7 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     ReleaseDC(hwnd, hdc);
 
     m_uptrBrushBK = unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::WhiteSmoke));
+    m_uptrPen = unique_ptr<Gdiplus::Pen>(new Gdiplus::Pen(Gdiplus::Color::Crimson));
 
     // 创建工作线程
     InitializeCriticalSection(&m_cs);
@@ -113,10 +114,24 @@ void CMainWnd::OnPaint(HWND hwnd)
 
     // 分成上下两栏,上栏显示拼接后的图像,下栏显示单独的图像
     EnterCriticalSection(&m_cs);
+    const float fRatio = 0.8f; // 上栏占据比例
     int count = m_mate40.GetCount();
+    // top
+    if (count > 1) {
+        Gdiplus::Rect rcMerge(rc.left, rc.top, rc.right - rc.left, static_cast<int>((rc.bottom - rc.top) * fRatio));
+        const auto& uptrMerged = m_mate40.GetMergedBMP();
+        resizeRectForImage(uptrMerged, rcMerge);
+        g.DrawImage(uptrMerged.get(), rcMerge);
+    }
+
+    // seperator
+    int posY = static_cast<int>((rc.bottom - rc.top) * fRatio);
+    g.DrawLine(m_uptrPen.get(), rc.left, posY, rc.right, posY);
+
+    // bottom
     if (count > 0) {
-        int y = rc.top + rc.bottom / 2;
-        int height = (rc.bottom - rc.top) / 2;
+        int y = static_cast<int>((rc.top + rc.bottom) * fRatio);
+        int height = static_cast<int>((rc.bottom - rc.top) * (1.0f - fRatio));
         int width = (rc.right - rc.left) / count;
 
         int i = 0;
@@ -156,6 +171,9 @@ void CMainWnd::OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     {
     case ID_FILE_OPEN:
         pickImages();
+        break;
+    case ID_FILE_CLOSE:
+        clearImages();
         break;
     case ID_FILE_EXIT:
         SendMessage(hwnd, WM_CLOSE, 0, 0);
@@ -228,6 +246,16 @@ void CMainWnd::pickImages()
     }
 }
 
+void CMainWnd::clearImages()
+{
+    EnterCriticalSection(&m_cs);
+    m_vImagePaths.clear();
+    LeaveCriticalSection(&m_cs);
+    // 激活工作线程
+    m_atomJob = true;
+    SetEvent(m_evPuls);
+}
+
 void CMainWnd::resizeRectForImage(const unique_ptr<Gdiplus::Bitmap>& uptrBMP, Gdiplus::Rect& rc)
 {
     // 计算图片绘制区域 保持纵横比例不变
@@ -259,18 +287,24 @@ void CMainWnd::doWork()
             vector<wstring> vImagePathsW;
             EnterCriticalSection(&m_cs);
             
-            vImagePathsW = m_vImagePaths;
-            m_atomJob = false;
+            if (m_vImagePaths.size() > 0) {
+                vImagePathsW = m_vImagePaths;
+                m_atomJob = false;
 
-            vector<string> vImagePathsA = convert(vImagePathsW);
-            // 装载图像
-            m_mate40.LoadAll(vImagePathsA);
+                vector<string> vImagePathsA = convert(vImagePathsW);
+                // 装载图像
+                m_mate40.LoadAll(vImagePathsA);
 
-            // 鱼眼校正
-            m_mate40.CalibrateForFisheye();
+                // 鱼眼校正
+                m_mate40.CalibrateForFisheye();
 
-            // 图像配准
-            m_mate40.SpaceMatching();
+                // 图像配准
+                m_mate40.SpaceMatching();
+            }
+            else {
+                // clear
+                m_mate40.clearAll();
+            }
 
             LeaveCriticalSection(&m_cs);
         }
