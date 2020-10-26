@@ -111,6 +111,26 @@ void CMainWnd::OnPaint(HWND hwnd)
     Gdiplus::Graphics g(m_hdcMem);
     g.FillRectangle(m_uptrBrushBK.get(), 0, 0, rc.right, rc.bottom);
 
+    // 分成上下两栏,上栏显示拼接后的图像,下栏显示单独的图像
+    EnterCriticalSection(&m_cs);
+    int count = m_mate40.GetCount();
+    if (count > 0) {
+        int y = rc.top + rc.bottom / 2;
+        int height = (rc.bottom - rc.top) / 2;
+        int width = (rc.right - rc.left) / count;
+
+        int i = 0;
+        const auto& vuptrTeaPots = m_mate40.GetTeaPots();
+        for (const auto& uptrTeaPot : vuptrTeaPots) {
+            Gdiplus::Rect rcBmp(rc.left + width * i, y, width, height);
+            const auto& uptrBMP = uptrTeaPot->GetBMP();
+            resizeRectForImage(uptrBMP, rcBmp);
+            g.DrawImage(uptrBMP.get(), rcBmp);
+            i++;
+        }
+    }
+    LeaveCriticalSection(&m_cs);
+
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hwnd, &ps);
     BitBlt(hdc, 0, 0, rc.right, rc.bottom, m_hdcMem, 0, 0, SRCCOPY);
@@ -208,10 +228,10 @@ void CMainWnd::pickImages()
     }
 }
 
-void CMainWnd::calcRectForImage(Gdiplus::Rect& rc)
+void CMainWnd::resizeRectForImage(const unique_ptr<Gdiplus::Bitmap>& uptrBMP, Gdiplus::Rect& rc)
 {
     // 计算图片绘制区域 保持纵横比例不变
-    int nWidthBMP = 800, nHeightBMP = 600;
+    int nWidthBMP = uptrBMP->GetWidth(), nHeightBMP = uptrBMP->GetHeight();
     float fRatioRC = 1.0f * rc.Width / rc.Height;
 
     float fRatioIMG = 1.0f * nWidthBMP / nHeightBMP;
@@ -219,13 +239,13 @@ void CMainWnd::calcRectForImage(Gdiplus::Rect& rc)
     if (fRatioRC >= fRatioIMG) {
         // 绘制区域比图像宽,图像垂直方向占满
         float fWidth = 1.0f * nWidthBMP * rc.Height / nHeightBMP;
-        rc.X = static_cast<int>((rc.Width - fWidth) / 2.0f);
+        rc.X = static_cast<int>(rc.X + (rc.Width - fWidth) / 2.0f);
         rc.Width = static_cast<int>(fWidth);
     }
     else {
         // 绘制区域比图像窄,图像水平方向占满
         float fHeight = 1.0f * nHeightBMP * rc.Width / nWidthBMP;
-        rc.Y = static_cast<int>((rc.Height - fHeight) / 2.0f);
+        rc.Y = static_cast<int>(rc.Y + (rc.Height - fHeight) / 2.0f);
         rc.Height = static_cast<int>(fHeight);
     }
 }
@@ -238,12 +258,14 @@ void CMainWnd::doWork()
         if (m_atomJob) {
             vector<wstring> vImagePathsW;
             EnterCriticalSection(&m_cs);
+            
             vImagePathsW = m_vImagePaths;
             m_atomJob = false;
-            LeaveCriticalSection(&m_cs);
 
             vector<string> vImagePathsA = convert(vImagePathsW);
             m_mate40.LoadAll(vImagePathsA);
+
+            LeaveCriticalSection(&m_cs);
         }
         PostMessage(m_hwnd, WM_USER, 0, 0);
         OutputDebugString(L"===> Wait...\n");

@@ -47,16 +47,15 @@ private:
     CRITICAL_SECTION m_cs;
     // 文件路径
     vector<wstring> m_vImagePaths;
-    // 被显示的图像
-    vector<Gdiplus::Bitmap*> m_vptrBitmaps;
 
     // 打开图像
     void pickImages();
-    // 计算图像绘制区域
-    void calcRectForImage(Gdiplus::Rect& rc);
     // 工作线程
     void doWork();
     // wstring to string
     vector<string> convert(const vector<wstring>& vSrc);
+private:
+    // 调整图像绘制区域以保持原始比例
+    static void resizeRectForImage(const unique_ptr<Gdiplus::Bitmap>& uptrBMP, Gdiplus::Rect& rc);
 };
 

@@ -15,4 +15,11 @@ TeaPot::~TeaPot()
 void TeaPot::LoadImage()
 {
 	m_image = cv::imread(m_strPath);
+	m_uptrBMP = FromOpenCVImage(m_image);
+}
+
+unique_ptr<Gdiplus::Bitmap> TeaPot::FromOpenCVImage(const cv::Mat& image)
+{
+	cv::Size size = image.size();
+	return unique_ptr<Gdiplus::Bitmap>(new Gdiplus::Bitmap(size.width, size.height, static_cast<int>(image.step1()), PixelFormat24bppRGB, image.data));
 }

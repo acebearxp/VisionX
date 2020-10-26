@@ -10,7 +10,7 @@ void Mate40::LoadAll(const vector<string>& vPaths)
 		m_vuptrTeaPots.push_back(unique_ptr<TeaPot>(new TeaPot(s)));
 	}
 
-	// 逐个处理
+	// 逐个加载
 	for (const auto& uptrTeaPot : m_vuptrTeaPots) {
 		uptrTeaPot->LoadImage();
 	}
