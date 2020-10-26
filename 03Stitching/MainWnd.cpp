@@ -90,7 +90,7 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 
 void CMainWnd::OnDestroy(HWND hwnd)
 {
-    m_atomQuit = false;
+    m_atomQuit = true;
     SetEvent(m_evPuls);
     m_thread.join();
     CloseHandle(m_evPuls);
@@ -172,15 +172,13 @@ void CMainWnd::pickImages()
         vector<wstring> selected;
         wchar_t* pStart = ofn.lpstrFile;
         while (*pStart != L'\0') {
-            // convert to multi-bytes
-            // WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, pStart, -1, szbuf, MAX_PATH * 2, NULL, FALSE);
             selected.push_back(pStart);
             pStart += wcslen(pStart) + 1;
         }
 
         // 用于剔除重复项
         auto append_unique = [this](const wstring & x) {
-            for (auto s : m_vImagePaths) {
+            for (const wstring& s : m_vImagePaths) {
                 if (x == s) return;
             }
             m_vImagePaths.push_back(x);
@@ -238,17 +236,14 @@ void CMainWnd::doWork()
         OutputDebugString(L"===> Puls...\n");
 
         if (m_atomJob) {
-            vector<wstring> vImagePaths;
+            vector<wstring> vImagePathsW;
             EnterCriticalSection(&m_cs);
-            vImagePaths = m_vImagePaths;
+            vImagePathsW = m_vImagePaths;
+            m_atomJob = false;
             LeaveCriticalSection(&m_cs);
 
-            wchar_t buf[4096];
-            int nWritten = 0;
-            for (auto s : vImagePaths) {
-                nWritten += swprintf_s(buf + nWritten, sizeof(buf)/sizeof(wchar_t) - nWritten, L"===> %s\n", s.c_str());
-            }
-            OutputDebugString(buf);
+            vector<string> vImagePathsA = convert(vImagePathsW);
+            m_mate40.LoadAll(vImagePathsA);
         }
         PostMessage(m_hwnd, WM_USER, 0, 0);
         OutputDebugString(L"===> Wait...\n");
@@ -256,4 +251,18 @@ void CMainWnd::doWork()
     }
     while (!m_atomQuit);
     OutputDebugString(L"===> Quit...\n");
+}
+
+vector<string> CMainWnd::convert(const vector<wstring>& vSrcW)
+{
+    // convert to multi-bytes
+    vector<string> vOutputA;
+
+    char szbuf[1024];
+    for (const wstring& s : vSrcW) {
+        WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, s.c_str(), -1, szbuf, sizeof(szbuf), NULL, FALSE);
+        vOutputA.push_back(szbuf);
+    }
+    
+    return vOutputA;
 }

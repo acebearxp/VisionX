@@ -1,6 +1,7 @@
 #pragma once
 #include "XWnd.h"
 #include "resource.h"
+#include "Mate40.h"
 
 using namespace std;
 
@@ -30,6 +31,9 @@ private:
     HBITMAP m_hBmpMem;
     unique_ptr<Gdiplus::SolidBrush> m_uptrBrushBK;
 
+    // 关键处理对象
+    Mate40 m_mate40;
+
     // 后台工作线程
     thread m_thread;
     // 信号事件
@@ -52,5 +56,7 @@ private:
     void calcRectForImage(Gdiplus::Rect& rc);
     // 工作线程
     void doWork();
+    // wstring to string
+    vector<string> convert(const vector<wstring>& vSrc);
 };
 

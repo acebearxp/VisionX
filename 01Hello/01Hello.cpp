@@ -9,16 +9,16 @@
     #pragma comment(lib, "opencv_world440.lib")
 #endif //  DEBUG
 
-
+using namespace std;
 
 int main()
 {
-    cv::String cvstrTitleIn("Sample");
-    cv::String cvstrTitleOut("OutX");
-    cv::String cvstrPath(R"(D:/VisionX/01Hello/front.jpg)");
+    string strTitleIn("Sample");
+    string strTitleOut("OutX");
+    string strPath(R"(D:/VisionX/01Hello/front.jpg)");
 
-    cv::Mat image = cv::imread(cvstrPath);
-    cv::namedWindow(cvstrTitleIn, cv::WINDOW_AUTOSIZE);
+    cv::Mat image = cv::imread(strPath);
+    cv::namedWindow(strTitleIn, cv::WINDOW_AUTOSIZE);
 
     double f = 1500;
     cv::Size rc(800, 450);
@@ -33,14 +33,14 @@ int main()
     cv::Mat outX;
     cv::fisheye::undistortImage(image, outX, k, d, k, rc);
 
-    cv::namedWindow(cvstrTitleOut, cv::WINDOW_AUTOSIZE);
+    cv::namedWindow(strTitleOut, cv::WINDOW_AUTOSIZE);
 
-    cv::imshow(cvstrTitleIn, image);
-    cv::imshow(cvstrTitleOut, outX);
+    cv::imshow(strTitleIn, image);
+    cv::imshow(strTitleOut, outX);
 
     cv::waitKey(0);
-    cv::destroyWindow(cvstrTitleIn);
-    cv::destroyWindow(cvstrTitleOut);
+    cv::destroyWindow(strTitleIn);
+    cv::destroyWindow(strTitleOut);
 
 
     // cv::Size size = inputImage.size();

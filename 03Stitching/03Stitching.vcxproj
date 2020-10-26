@@ -87,17 +87,21 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWnd.cpp" />
+    <ClCompile Include="Mate40.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="TeaPot.cpp" />
     <ClCompile Include="XWnd.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="MainWnd.h" />
+    <ClInclude Include="Mate40.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="TeaPot.h" />
     <ClInclude Include="XWnd.h" />
   </ItemGroup>
   <ItemGroup>
