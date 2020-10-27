@@ -114,30 +114,31 @@ void CMainWnd::OnPaint(HWND hwnd)
 
     // 分成上下两栏,上栏显示拼接后的图像,下栏显示单独的图像
     EnterCriticalSection(&m_cs);
-    const float fRatio = 0.8f; // 上栏占据比例
+    const float fRatio = 0.8f; // 上栏最大占据比例
     int count = m_mate40.GetCount();
+    int posY = 0;
     // top
     if (count > 1) {
         Gdiplus::Rect rcMerge(rc.left, rc.top, rc.right - rc.left, static_cast<int>((rc.bottom - rc.top) * fRatio));
         const auto& uptrMerged = m_mate40.GetMergedBMP();
         resizeRectForImage(uptrMerged, rcMerge);
+        rcMerge.Y = 0; // 往上移动，不留白
+        posY = rcMerge.Height;
         g.DrawImage(uptrMerged.get(), rcMerge);
-    }
 
-    // seperator
-    int posY = static_cast<int>((rc.bottom - rc.top) * fRatio);
-    g.DrawLine(m_uptrPen.get(), rc.left, posY, rc.right, posY);
+        // seperator
+        g.DrawLine(m_uptrPen.get(), rc.left, posY, rc.right, posY);
+    }
 
     // bottom
     if (count > 0) {
-        int y = static_cast<int>((rc.top + rc.bottom) * fRatio);
-        int height = static_cast<int>((rc.bottom - rc.top) * (1.0f - fRatio));
+        int height = rc.bottom - rc.top - posY;
         int width = (rc.right - rc.left) / count;
 
         int i = 0;
         const auto& vuptrTeaPots = m_mate40.GetTeaPots();
         for (const auto& uptrTeaPot : vuptrTeaPots) {
-            Gdiplus::Rect rcBmp(rc.left + width * i, y, width, height);
+            Gdiplus::Rect rcBmp(rc.left + width * i, posY, width, height);
             const auto& uptrBmp = uptrTeaPot->GetBMP();
             resizeRectForImage(uptrBmp, rcBmp);
             g.DrawImage(uptrBmp.get(), rcBmp);
