@@ -43,7 +43,7 @@ private:
 	// 配准2个相邻的图像
 	void matchAdjacent(const cv::UMat& imageLeft, const cv::UMat& imageRight);
 
-	// 裁剪部分区域
-	cv::UMat clip(const cv::UMat& image, float from, float to);
+	// 裁剪部分关键点
+	vector<cv::KeyPoint> clipKeyPoints(const vector<cv::KeyPoint>& vKeyPoints, float fClipXFrom, float fClipXTo, const cv::Size& sizeImage);
 };
 
