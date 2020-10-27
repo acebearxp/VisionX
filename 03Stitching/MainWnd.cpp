@@ -126,7 +126,7 @@ void CMainWnd::OnPaint(HWND hwnd)
         posY = rcMerge.Height;
         g.DrawImage(uptrMerged.get(), rcMerge);
 
-        // seperator
+        // separator
         g.DrawLine(m_uptrPen.get(), rc.left, posY, rc.right, posY);
     }
 

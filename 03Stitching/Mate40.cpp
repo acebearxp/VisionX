@@ -59,18 +59,19 @@ void Mate40::SpaceMatching()
 void Mate40::matchAdjacent(const cv::UMat& imageLeft, const cv::UMat& imageRight)
 {
 	// 只需要匹配 "左图的右边" 和 "右图的左边"
-	auto imageLL = clip(imageLeft, 0.0f, 0.5f);
-	auto imageRR = clip(imageRight, 0.5f, 1.0f);
+	auto imageL = clip(imageLeft, 0.0f, 0.5f);
+	auto imageR = clip(imageRight, 0.5f, 1.0f);
 
 	// 转换为灰度
-	cv::UMat imageL, imageR;
-	cv::cvtColor(imageLL, imageL, cv::COLOR_RGB2GRAY);
-	cv::cvtColor(imageRR, imageR, cv::COLOR_RGB2GRAY);
+	// cv::UMat imageL, imageR;
+	// cv::cvtColor(imageLL, imageL, cv::COLOR_RGB2GRAY);
+	// cv::cvtColor(imageRR, imageR, cv::COLOR_RGB2GRAY);
 
 	// 算法
 	// cv::Ptr<cv::ORB> cvptrX = cv::ORB::create();
-	cv::Ptr<cv::BRISK> cvptrX = cv::BRISK::create(45, 2, 4.0f);
+	// cv::Ptr<cv::BRISK> cvptrX = cv::BRISK::create(30, 5, 4.0f);
 	// cv::Ptr<cv::SIFT> cvptrX = cv::SIFT::create();
+	cv::Ptr<cv::AKAZE> cvptrX = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, 0, 3, 0.002f, 5, 9, cv::KAZE::DIFF_PM_G2);
 
 	vector<cv::KeyPoint> keyPointLeft, keyPointRight;
 	cvptrX->detect(imageL, keyPointLeft);
