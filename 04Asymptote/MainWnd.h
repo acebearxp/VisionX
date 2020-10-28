@@ -24,11 +24,15 @@ protected:
 
     void OnGetMinMaxInfo(HWND hwnd, LPMINMAXINFO lpMinMaxInfo);
 private:
+    
+
     // GDI+资源
     HDC m_hdcMem;
     HBITMAP m_hBmpMem;
     unique_ptr<Gdiplus::SolidBrush> m_uptrBrushBK;
 
+    // 计算默认窗口位置
+    RECT calcDefaultWindowRect();
     // 打开图像
     void pickImage();
     // 计算图像绘制区域

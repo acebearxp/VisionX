@@ -21,17 +21,14 @@ ATOM CMainWnd::Register(HINSTANCE hInstance)
 
 BOOL CMainWnd::Create(HINSTANCE hInstance)
 {
-    int cxScreen = GetSystemMetrics(SM_CXSCREEN);
-    int cyScreen = GetSystemMetrics(SM_CYSCREEN);
-    int width = cxScreen > 800 ? 800 : cxScreen;
-    int height = cyScreen > 600 ? 600 : cyScreen;
+    const RECT rc = calcDefaultWindowRect();
 
     WNDCLASS cls;
     if (!GetClassInfo(hInstance, c_wszClsName, &cls)) Register(hInstance);
 
     const wstring wstrTitle(L"Asymptote");
     m_hwnd = CreateWindow(c_wszClsName, wstrTitle.c_str(), WS_OVERLAPPEDWINDOW|WS_VISIBLE,
-        (cxScreen - width) / 2, (cyScreen - height) / 2, width, height,
+        rc.left, rc.top, rc.right-rc.left, rc.bottom-rc.top,
         NULL, NULL, hInstance, this);
     if (!m_hwnd) {
         MessageBox(NULL, L"Create window failed", L"Error", MB_OK);
@@ -135,6 +132,45 @@ void CMainWnd::OnGetMinMaxInfo(HWND hwnd, LPMINMAXINFO lpMinMaxInfo)
 {
     lpMinMaxInfo->ptMinTrackSize.x = 400;
     lpMinMaxInfo->ptMinTrackSize.y = 300;
+}
+
+RECT CMainWnd::calcDefaultWindowRect()
+{
+    RECT rc;
+
+    // 枚举显示器,默认显示在较大的显示器上
+    EnumDisplayMonitors(NULL, nullptr,
+        [](HMONITOR hMonitor, HDC hdc, LPRECT pRECT, LPARAM pParam)->BOOL
+    {
+        RECT& rc = *reinterpret_cast<RECT*>(pParam);
+        float fArea = 1.0f * (rc.right - rc.left) * (rc.bottom - rc.top);
+        if (1.0f * (pRECT->right - pRECT->left) * (pRECT->bottom - pRECT->top) > fArea) {
+            rc = *pRECT;
+        }
+        return TRUE;
+    }, reinterpret_cast<LPARAM>(&rc));
+
+    // 如果前面的办法没有获取到,使用默认显示器参数
+    if (rc.right - rc.left <= 0 || rc.bottom - rc.top <= 0) {
+        rc.left = rc.top = 0;
+        rc.right = GetSystemMetrics(SM_CXSCREEN);
+        rc.bottom = GetSystemMetrics(SM_CYSCREEN);
+    }
+
+    // 最大不超过800x600
+    const int maxWidth = 800, maxHeight = 600;
+    if (rc.right - rc.left > maxWidth) {
+        int center = (rc.left + rc.right) / 2;
+        rc.left = center - maxWidth / 2;
+        rc.right = center + maxWidth / 2;
+    }
+    if (rc.bottom - rc.top > maxHeight) {
+        int center = (rc.top + rc.bottom) / 2;
+        rc.top = center - maxHeight / 2;
+        rc.bottom = center + maxHeight / 2;
+    }
+
+    return rc;
 }
 
 void CMainWnd::pickImage()
