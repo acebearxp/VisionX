@@ -84,17 +84,27 @@ void Mate40::matchAdjacent(const cv::UMat& imageLeft, const cv::UMat& imageRight
 
 	cv::BFMatcher matcher(cv::NORM_HAMMING, true);
 	// cv::FlannBasedMatcher matcher; // for SIFT
-	vector<cv::DMatch> matchedPoints;
+	vector<cv::DMatch> matchedPoints, matchedPointsBetter;
 	matcher.match(descLeft, descRight, matchedPoints);
+
+	// 选出比较好的匹配点
+	// Y相差不应大太,设定在20%以内
+	int maxDeltaY = static_cast<int>(imageLeft.size().height * 0.2f);
+	for (const auto& matched : matchedPoints) {
+		const auto& ptLeft = keyPointLeft[matched.queryIdx];
+		const auto& ptRight = keyPointRight[matched.trainIdx];
+		if (abs(ptLeft.pt.y - ptRight.pt.y) < maxDeltaY)
+			matchedPointsBetter.push_back(matched);
+	}
 
 	wchar_t buf[1024];
 	swprintf_s(buf, L"=== matched ===> %llu\n", matchedPoints.size());
 	OutputDebugString(buf);
 
 	
-	sort(matchedPoints.begin(), matchedPoints.end(), [](const cv::DMatch& x, const cv::DMatch& y)->bool {
-		return x.distance < y.distance;
-	});
+	// sort(matchedPoints.begin(), matchedPoints.end(), [](const cv::DMatch& x, const cv::DMatch& y)->bool {
+	// 	return x.distance < y.distance;
+	// });
 
 	// if(matchedPoints.size() > 50)
 	//	matchedPoints.resize(50);
@@ -106,7 +116,7 @@ void Mate40::matchAdjacent(const cv::UMat& imageLeft, const cv::UMat& imageRight
 		OutputDebugString(buf);
 	}
 
-	cv::drawMatches(imageLeft, keyPointLeft, imageRight, keyPointRight, matchedPoints, m_xStep);
+	cv::drawMatches(imageLeft, keyPointLeft, imageRight, keyPointRight, matchedPointsBetter, m_xStep);
 
 	m_uptrXStep = TeaPot::FromOpenCVImage(m_xStep);
 }
