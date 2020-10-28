@@ -31,6 +31,20 @@ void Mate40::CalibrateForFisheye()
 	}
 }
 
+void Mate40::Stitching()
+{
+	cv::Ptr<cv::Stitcher> cvptrStitcher = cv::Stitcher::create(cv::Stitcher::Mode::SCANS);
+
+	vector<cv::UMat> vSource;
+	for (const auto& uptrTeaPot : m_vuptrTeaPots) {
+		vSource.push_back(uptrTeaPot->GetImageForGPU());
+	}
+
+	cvptrStitcher->setPanoConfidenceThresh(0.1);
+	cv::Stitcher::Status status = cvptrStitcher->stitch(vSource, m_xStep);
+	m_uptrXStep = TeaPot::FromOpenCVImage(m_xStep);
+}
+
 void Mate40::SpaceMatching()
 {
 	// 相邻图像配准
@@ -40,7 +54,12 @@ void Mate40::SpaceMatching()
 			const auto& uptrLeft = m_vuptrTeaPots[i - 1];
 			const auto& uptrRight = m_vuptrTeaPots[i];
 
-			matchAdjacent(uptrLeft->GetImageForGPU(), uptrRight->GetImageForGPU());
+			vector<cv::KeyPoint> keyPointLeft, keyPointRight;
+			vector<cv::DMatch> matched;
+			// C++ 17 not supported yet
+			// [keyPointLeft, matched, keyPointRight] = matchAdjacent(uptrLeft->GetImageForGPU(), uptrRight->GetImageForGPU());
+			tie(keyPointLeft, matched, keyPointRight) = matchAdjacent(uptrLeft->GetImageForGPU(), uptrRight->GetImageForGPU());
+			cv::Mat homo3x3 = calcHomography(matched, keyPointLeft, keyPointRight);
 
 			// 先只处理2个图
 			break;
@@ -56,7 +75,8 @@ void Mate40::SpaceMatching()
 	}
 }
 
-void Mate40::matchAdjacent(const cv::UMat& imageLeft, const cv::UMat& imageRight)
+tuple<vector<cv::KeyPoint>, vector<cv::DMatch>, vector<cv::KeyPoint>>
+	Mate40::matchAdjacent(const cv::UMat& imageLeft, const cv::UMat& imageRight)
 {
 	// 转换为灰度
 	// cv::UMat imageL, imageR;
@@ -101,14 +121,6 @@ void Mate40::matchAdjacent(const cv::UMat& imageLeft, const cv::UMat& imageRight
 	swprintf_s(buf, L"=== matched ===> %llu\n", matchedPoints.size());
 	OutputDebugString(buf);
 
-	
-	// sort(matchedPoints.begin(), matchedPoints.end(), [](const cv::DMatch& x, const cv::DMatch& y)->bool {
-	// 	return x.distance < y.distance;
-	// });
-
-	// if(matchedPoints.size() > 50)
-	//	matchedPoints.resize(50);
-
 	for (const auto& point : matchedPoints) {
 		const auto& ptLeft = keyPointLeft[point.queryIdx];
 		const auto& ptRight = keyPointRight[point.trainIdx];
@@ -117,8 +129,25 @@ void Mate40::matchAdjacent(const cv::UMat& imageLeft, const cv::UMat& imageRight
 	}
 
 	cv::drawMatches(imageLeft, keyPointLeft, imageRight, keyPointRight, matchedPointsBetter, m_xStep);
-
 	m_uptrXStep = TeaPot::FromOpenCVImage(m_xStep);
+
+	return { keyPointLeft, matchedPointsBetter, keyPointRight };
+}
+
+cv::Mat Mate40::calcHomography(const vector<cv::DMatch>& matched, const vector<cv::KeyPoint>& keyPointLeft, const vector<cv::KeyPoint>& keyPointRight)
+{
+	vector<cv::Point2f> vLeftPoints, vRightPoints;
+	for (const auto& m : matched) {
+		vLeftPoints.push_back(keyPointLeft[m.queryIdx].pt);
+		vRightPoints.push_back(keyPointRight[m.trainIdx].pt);
+	}
+
+	// 左图不变,求右图变换矩阵
+	cv::Mat matHomo3x3 = cv::findHomography(vRightPoints, vLeftPoints, cv::RANSAC);
+	stringstream ss = (stringstream() << matHomo3x3 << "\n");
+	OutputDebugStringA(ss.str().c_str());
+
+	return matHomo3x3;
 }
 
 vector<cv::KeyPoint> Mate40::clipKeyPoints(const vector<cv::KeyPoint>& vKeyPoints, float fClipXFrom, float fClipXTo, const cv::Size& sizeImage)

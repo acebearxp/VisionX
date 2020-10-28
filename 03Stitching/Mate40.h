@@ -26,6 +26,9 @@ public:
 	// 鱼眼校正
 	void CalibrateForFisheye();
 
+	// 拼接
+	void Stitching();
+
 	// 图像配准
 	void SpaceMatching();
 private:
@@ -41,7 +44,11 @@ private:
 	unique_ptr<Gdiplus::Bitmap> m_uptrXStep;
 
 	// 配准2个相邻的图像
-	void matchAdjacent(const cv::UMat& imageLeft, const cv::UMat& imageRight);
+	tuple<vector<cv::KeyPoint>, vector<cv::DMatch>, vector<cv::KeyPoint>>
+		matchAdjacent(const cv::UMat& imageLeft, const cv::UMat& imageRight);
+
+	// 求变换矩阵
+	cv::Mat calcHomography(const vector<cv::DMatch>& matched, const vector<cv::KeyPoint>& keyPointLeft, const vector<cv::KeyPoint>& keyPointRight);
 
 	// 裁剪部分关键点
 	vector<cv::KeyPoint> clipKeyPoints(const vector<cv::KeyPoint>& vKeyPoints, float fClipXFrom, float fClipXTo, const cv::Size& sizeImage);
