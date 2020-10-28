@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "02Adjust", "02Adjust\02Adju
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "03Stitching", "03Stitching\03Stitching.vcxproj", "{9CD29FCC-1250-4ADE-B3AF-421F2B4E3FFF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "04Asymptote", "04Asymptote\04Asymptote.vcxproj", "{9CD29FCC-1250-4ADE-B3AF-421F2B4E4000}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -27,6 +29,10 @@ Global
 		{9CD29FCC-1250-4ADE-B3AF-421F2B4E3FFF}.Debug|x64.Build.0 = Debug|x64
 		{9CD29FCC-1250-4ADE-B3AF-421F2B4E3FFF}.Release|x64.ActiveCfg = Release|x64
 		{9CD29FCC-1250-4ADE-B3AF-421F2B4E3FFF}.Release|x64.Build.0 = Release|x64
+		{9CD29FCC-1250-4ADE-B3AF-421F2B4E4000}.Debug|x64.ActiveCfg = Debug|x64
+		{9CD29FCC-1250-4ADE-B3AF-421F2B4E4000}.Debug|x64.Build.0 = Debug|x64
+		{9CD29FCC-1250-4ADE-B3AF-421F2B4E4000}.Release|x64.ActiveCfg = Release|x64
+		{9CD29FCC-1250-4ADE-B3AF-421F2B4E4000}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
