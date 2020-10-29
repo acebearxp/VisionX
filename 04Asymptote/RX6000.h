@@ -7,6 +7,9 @@
    */
 class RX6000
 {
+public:
+	// ¼ÓÔØÍ¼Ïñ
+	void LoadImages(const std::vector<std::wstring> vPaths);
 private:
 	// Each beaker holds an image
 	std::vector<std::unique_ptr<Beaker>> m_vuptrBeakers;

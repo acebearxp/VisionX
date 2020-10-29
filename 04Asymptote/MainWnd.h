@@ -34,9 +34,26 @@ private:
     // 计算默认窗口位置
     RECT calcDefaultWindowRect();
     // 打开图像
-    void pickImage();
+    void pickImages();
+    // 关闭图像
+    void clearImages();
     // 计算图像绘制区域
     void calcRectForImage(Gdiplus::Rect& rc);
+private:
+    // 工作信号
+    HANDLE m_evWakeUp;
+    // 退出标志
+    std::atomic_bool m_atomExit;
+    // 工作线程
+    std::thread m_thread;
+
+    // 保护
+    CRITICAL_SECTION m_csInput;
+    // 待处理图片路径
+    std::vector<std::wstring> m_vPaths;
+
+    // 后台任务
+    void doWork();
 private:
     static const wchar_t c_wszClsName[];
     // 调整图像绘制区域以保持原始比例

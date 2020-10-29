@@ -76,11 +76,23 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     m_uptrBrushBK = unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::WhiteSmoke));
     m_uptrPenGray = unique_ptr<Gdiplus::Pen>(new Gdiplus::Pen(Gdiplus::Color::Gray));
 
+    // 启动工作线程
+    m_evWakeUp = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    InitializeCriticalSectionEx(&m_csInput, 50, 0);
+    m_thread = thread(&CMainWnd::doWork, this);
+
     return bRet;
 }
 
 void CMainWnd::OnDestroy(HWND hwnd)
 {
+    // 结束工作线程
+    m_atomExit = true;
+    SetEvent(m_evWakeUp);
+    m_thread.join();
+    DeleteCriticalSection(&m_csInput);
+    CloseHandle(m_evWakeUp);
+
     ReleaseDC(hwnd, m_hdcMem);
     DeleteBitmap(m_hBmpMem);
     CXWnd::OnDestroy(hwnd);
@@ -124,7 +136,10 @@ void CMainWnd::OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     switch (id)
     {
     case ID_FILE_OPEN:
-        pickImage();
+        pickImages();
+        break;
+    case ID_FILE_CLOSE:
+        clearImages();
         break;
     case ID_FILE_EXIT:
         SendMessage(hwnd, WM_CLOSE, 0, 0);
@@ -180,9 +195,9 @@ RECT CMainWnd::calcDefaultWindowRect()
     return rc;
 }
 
-void CMainWnd::pickImage()
+void CMainWnd::pickImages()
 {
-    wchar_t wcsFile[MAX_PATH] = L"\0";
+    wchar_t wcsFile[MAX_PATH*2] = L"\0";
 
     OPENFILENAME ofn;
     ZeroMemory(&ofn, sizeof(OPENFILENAME));
@@ -190,16 +205,65 @@ void CMainWnd::pickImage()
     ofn.hwndOwner = m_hwnd;
     ofn.lpstrFilter = L"JPEG(*.jpg;*.jpeg)\0*.jpg;*.jpeg\0\0";
     ofn.lpstrFile = wcsFile;
-    ofn.nMaxFile = MAX_PATH;
+    ofn.nMaxFile = sizeof(wcsFile);
     ofn.nFilterIndex = 1;
-    ofn.Flags = OFN_FILEMUSTEXIST | OFN_ENABLESIZING | OFN_EXPLORER;
+    ofn.Flags = OFN_FILEMUSTEXIST | OFN_ENABLESIZING | OFN_EXPLORER | OFN_ALLOWMULTISELECT;
 
     if (GetOpenFileName(&ofn)) {
-        // convert to multi-bytes
-        char szbuf[MAX_PATH + 1];
-        memset(szbuf, 0, sizeof(szbuf));
-        WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, ofn.lpstrFile, static_cast<int>(wcslen(ofn.lpstrFile)), szbuf, MAX_PATH, NULL, FALSE);
+        // 多选文件,双0结尾
+        vector<wstring> selected;
+        wchar_t* pStart = ofn.lpstrFile;
+        while (*pStart != L'\0') {
+            selected.push_back(pStart);
+            pStart += wcslen(pStart) + 1;
+        }
+
+        // 剔除重复项
+        auto append_unique = [](vector<wstring>& vPaths, const wstring& s) {
+            for (const wstring& path : vPaths) {
+                if (path == s) return;
+            }
+            vPaths.push_back(s);
+        };
+
+        EnterCriticalSection(&m_csInput);
+        if (selected.size() == 1) {
+            append_unique(m_vPaths, selected[0]);
+        }
+        else {
+            for (int i = 1; i < selected.size(); i++) {
+                swprintf_s(wcsFile, L"%s\\%s", selected[0].c_str(), selected[i].c_str());
+                append_unique(m_vPaths, wcsFile);
+            }
+        }
+        LeaveCriticalSection(&m_csInput);
+        SetEvent(m_evWakeUp);
     }
+}
+
+void CMainWnd::clearImages()
+{
+    EnterCriticalSection(&m_csInput);
+    m_vPaths.clear();
+    LeaveCriticalSection(&m_csInput);
+    SetEvent(m_evWakeUp);
+}
+
+void CMainWnd::doWork()
+{
+    while (WAIT_OBJECT_0 == WaitForSingleObject(m_evWakeUp, INFINITE)) {
+        if (m_atomExit) break;
+        OutputDebugString(L"=== Thread ===> Working...\n");
+
+        EnterCriticalSection(&m_csInput);
+        wchar_t buf[1024];
+        for (const auto& s : m_vPaths) {
+            swprintf_s(buf, L"=== m_vPath ===> %s\n", s.c_str());
+            OutputDebugString(buf);
+        }
+        LeaveCriticalSection(&m_csInput);
+    }
+    OutputDebugString(L"=== Thread ===> Exit\n");
 }
 
 void CMainWnd::resizeRectForImage(const unique_ptr<Gdiplus::Bitmap>& uptrBMP, Gdiplus::Rect& rc)
