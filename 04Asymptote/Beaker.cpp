@@ -1,7 +1,15 @@
 #include "stdafx.h"
 #include "Beaker.h"
 
-Beaker::Beaker(const std::wstring& wsPath)
-	:c_wsPath(wsPath)
+using namespace std;
+
+Beaker::Beaker()
+	:c_strPath()
 {
+}
+
+Beaker::Beaker(const string& strPath)
+	:c_strPath(strPath)
+{
+	m_image = cv::imread(strPath);
 }

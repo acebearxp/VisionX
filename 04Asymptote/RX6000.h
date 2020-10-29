@@ -8,9 +8,15 @@
 class RX6000
 {
 public:
+	std::unique_ptr<Beaker>& GetOutputBeaker() { return m_uptrOutputBeaker; }
+	const std::vector<std::unique_ptr<Beaker>>& GetBeakers() { return m_vuptrBeakers; }
+
 	// ¼ÓÔØÍ¼Ïñ
-	void LoadImages(const std::vector<std::wstring> vPaths);
+	void LoadImages(const std::vector<std::string> vPaths);
+
 private:
+	// Êä³ö
+	std::unique_ptr<Beaker> m_uptrOutputBeaker;
 	// Each beaker holds an image
 	std::vector<std::unique_ptr<Beaker>> m_vuptrBeakers;
 };

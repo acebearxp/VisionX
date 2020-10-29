@@ -4,8 +4,13 @@
 class Beaker
 {
 public:
-	Beaker(const std::wstring & wsPath);
+	Beaker();
+	Beaker(const std::string & strPath);
+
+	const std::string& GetPath() const { return c_strPath; }
+	const cv::Mat& GetImage()const { return m_image; };
 private:
-	const std::wstring c_wsPath; // Í¼ÏñÂ·¾¶
+	const std::string c_strPath; // Í¼ÏñÂ·¾¶
+	cv::Mat m_image; // Ô­Ê¼Í¼Ïñ
 };
 

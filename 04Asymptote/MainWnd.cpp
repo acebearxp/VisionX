@@ -56,6 +56,10 @@ LRESULT CMainWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         HANDLE_MSG(hWnd, WM_ERASEBKGND, OnEraseBkgnd);
         HANDLE_MSG(hWnd, WM_SIZE, OnSize);
         HANDLE_MSG(hWnd, WM_GETMINMAXINFO, OnGetMinMaxInfo);
+    case WM_USER:
+        InvalidateRect(m_hwnd, nullptr, FALSE);
+        lRet = 0L;
+        break;
     default:
         lRet = CXWnd::WndProc(hWnd, uMsg, wParam, lParam);
         break;
@@ -78,7 +82,7 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 
     // 启动工作线程
     m_evWakeUp = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    InitializeCriticalSectionEx(&m_csInput, 50, 0);
+    InitializeCriticalSectionEx(&m_csRX6K, 50, 0);
     m_thread = thread(&CMainWnd::doWork, this);
 
     return bRet;
@@ -90,7 +94,7 @@ void CMainWnd::OnDestroy(HWND hwnd)
     m_atomExit = true;
     SetEvent(m_evWakeUp);
     m_thread.join();
-    DeleteCriticalSection(&m_csInput);
+    DeleteCriticalSection(&m_csRX6K);
     CloseHandle(m_evWakeUp);
 
     ReleaseDC(hwnd, m_hdcMem);
@@ -111,6 +115,29 @@ void CMainWnd::OnPaint(HWND hwnd)
     // separator
     const int nYSeparator = static_cast<int>((rc.bottom - rc.top) * m_fSeparator);
     g.DrawLine(m_uptrPenGray.get(), rc.left, nYSeparator, rc.right, nYSeparator);
+
+    EnterCriticalSection(&m_csRX6K);
+    // top for output
+    if (m_uptrOutputBitmap != nullptr) {
+        auto& bmp = m_uptrOutputBitmap->GetBmp();
+        Gdiplus::Rect rcBmp(rc.left, rc.top, rc.right-rc.left, nYSeparator - rc.top);
+        resizeRectForImage(bmp, rcBmp);
+        g.DrawImage(&bmp, rcBmp);
+    }
+
+    // bottom for each input image
+    int count = static_cast<int>(m_vuptrBitmaps.size());
+    if (count > 0) {
+        int nYPos = nYSeparator + 1;
+        int nWidth = (rc.right - rc.left) / count;
+        for (int i = 0; i < m_vuptrBitmaps.size(); i++) {
+            auto& bmp = m_vuptrBitmaps[i]->GetBmp();
+            Gdiplus::Rect rcBmp(rc.left + nWidth * i, nYPos, nWidth, rc.bottom - nYPos);
+            resizeRectForImage(bmp, rcBmp);
+            g.DrawImage(&bmp, rcBmp);
+        }
+    }
+    LeaveCriticalSection(&m_csRX6K);
 
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hwnd, &ps);
@@ -226,7 +253,7 @@ void CMainWnd::pickImages()
             vPaths.push_back(s);
         };
 
-        EnterCriticalSection(&m_csInput);
+        EnterCriticalSection(&m_csRX6K);
         if (selected.size() == 1) {
             append_unique(m_vPaths, selected[0]);
         }
@@ -236,40 +263,88 @@ void CMainWnd::pickImages()
                 append_unique(m_vPaths, wcsFile);
             }
         }
-        LeaveCriticalSection(&m_csInput);
+        LeaveCriticalSection(&m_csRX6K);
         SetEvent(m_evWakeUp);
     }
 }
 
 void CMainWnd::clearImages()
 {
-    EnterCriticalSection(&m_csInput);
+    EnterCriticalSection(&m_csRX6K);
     m_vPaths.clear();
-    LeaveCriticalSection(&m_csInput);
+    LeaveCriticalSection(&m_csRX6K);
     SetEvent(m_evWakeUp);
 }
 
 void CMainWnd::doWork()
 {
+
     while (WAIT_OBJECT_0 == WaitForSingleObject(m_evWakeUp, INFINITE)) {
         if (m_atomExit) break;
         OutputDebugString(L"=== Thread ===> Working...\n");
 
-        EnterCriticalSection(&m_csInput);
-        wchar_t buf[1024];
-        for (const auto& s : m_vPaths) {
-            swprintf_s(buf, L"=== m_vPath ===> %s\n", s.c_str());
-            OutputDebugString(buf);
-        }
-        LeaveCriticalSection(&m_csInput);
+        // 处理输入
+        vector<wstring> vPaths = doWorkForInput();
+
+        // 装载图像
+        m_rx6k.LoadImages(convert(vPaths));
+
+        // 输出一次中间结果
+        doWorkForOutput(true, false);
+        
     }
     OutputDebugString(L"=== Thread ===> Exit\n");
 }
 
-void CMainWnd::resizeRectForImage(const unique_ptr<Gdiplus::Bitmap>& uptrBMP, Gdiplus::Rect& rc)
+vector<wstring> CMainWnd::doWorkForInput()
+{
+    vector<wstring> vPaths;
+    EnterCriticalSection(&m_csRX6K);
+    vPaths = m_vPaths;
+    LeaveCriticalSection(&m_csRX6K);
+
+#ifdef _DEBUG
+    wchar_t buf[1024];
+    for (const auto& s : vPaths) {
+        swprintf_s(buf, L"=== vPaths ===> %s\n", s.c_str());
+        OutputDebugString(buf);
+    }
+#endif // _DEBUG
+
+    return vPaths;
+}
+
+void CMainWnd::doWorkForOutput(bool bUpdateMiddle, bool bUpdateFinal)
+{
+    vector<unique_ptr<CVBitmap>> vuptrBitmaps;
+    unique_ptr<CVBitmap> uptrOutputBitmap;
+
+    // 准备输出
+    if (bUpdateMiddle) {
+        for (const auto& uptrBeaker : m_rx6k.GetBeakers()) {
+            const cv::Mat& image = uptrBeaker->GetImage();
+            vuptrBitmaps.push_back(unique_ptr<CVBitmap>(new CVBitmap(image)));
+        }
+    }
+
+    if (bUpdateFinal) {
+        if (m_rx6k.GetOutputBeaker() != nullptr) {
+            uptrOutputBitmap = make_unique<CVBitmap>(CVBitmap(m_rx6k.GetOutputBeaker()->GetImage()));
+        }
+    }
+
+    // 处理输出
+    EnterCriticalSection(&m_csRX6K);
+    if(bUpdateMiddle) m_vuptrBitmaps = move(vuptrBitmaps);
+    if(bUpdateFinal)  m_uptrOutputBitmap = move(uptrOutputBitmap);
+    LeaveCriticalSection(&m_csRX6K);
+    PostMessage(m_hwnd, WM_USER, 0, 0);
+}
+
+void CMainWnd::resizeRectForImage(Gdiplus::Bitmap& bmp, Gdiplus::Rect& rc)
 {
     // 计算图片绘制区域 保持纵横比例不变
-    int nWidthBMP = uptrBMP->GetWidth(), nHeightBMP = uptrBMP->GetHeight();
+    int nWidthBMP = bmp.GetWidth(), nHeightBMP = bmp.GetHeight();
     float fRatioRC = 1.0f * rc.Width / rc.Height;
 
     float fRatioIMG = 1.0f * nWidthBMP / nHeightBMP;
@@ -286,4 +361,18 @@ void CMainWnd::resizeRectForImage(const unique_ptr<Gdiplus::Bitmap>& uptrBMP, Gd
         rc.Y = static_cast<int>(rc.Y + (rc.Height - fHeight) / 2.0f);
         rc.Height = static_cast<int>(fHeight);
     }
+}
+
+vector<string> CMainWnd::convert(const vector<wstring>& vSrcW)
+{
+    // convert to multi-bytes
+    vector<string> vOutputA;
+
+    char szbuf[1024];
+    for (const wstring& s : vSrcW) {
+        WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, s.c_str(), -1, szbuf, sizeof(szbuf), NULL, FALSE);
+        vOutputA.push_back(szbuf);
+    }
+
+    return vOutputA;
 }
