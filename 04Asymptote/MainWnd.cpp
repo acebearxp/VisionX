@@ -292,8 +292,8 @@ void CMainWnd::doWork()
         // 输出一次中间结果
         doWorkForOutput(true, false);
 
-        // 拼接
-        m_rx6k.Stitching();
+        // 计算输出图像
+        m_rx6k.Compute();
 
         // 输出最终结果
         doWorkForOutput(true, true);

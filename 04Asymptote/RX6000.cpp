@@ -20,24 +20,22 @@ void RX6000::LoadImages(const std::vector<std::string> vPaths)
 			m_vuptrBeakers.push_back(move(search->second));
 		}
 		else {
-			m_vuptrBeakers.push_back(unique_ptr<Beaker>(new Beaker(path)));
+			auto uptrBeaker = unique_ptr<Beaker>(new Beaker());
+			uptrBeaker->Load(path);
+			m_vuptrBeakers.push_back(move(uptrBeaker));
 		}
 	}
 }
 
-void RX6000::Stitching()
+void RX6000::Compute()
 {
 	if (m_vuptrBeakers.size() > 0) {
 		const cv::Mat& image = m_vuptrBeakers[0]->GetImage();
-		m_uptrOutputBeaker = unique_ptr<Beaker>(new Beaker(image.cols, image.rows));
-		m_uptrOutputBeaker->Copy(*m_vuptrBeakers[0].get());
+		m_uptrOutputBeaker = unique_ptr<Beaker>(new Beaker());
+		m_uptrOutputBeaker->Load(image.cols, image.rows, cv::Vec3b(0xee, 0xee, 0xee));
+		m_uptrOutputBeaker->CopyImage(*m_vuptrBeakers[0].get());
 	}
 	else {
 		m_uptrOutputBeaker.reset();
 	}
-}
-
-void RX6000::makeTest()
-{
-
 }

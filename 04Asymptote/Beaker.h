@@ -4,18 +4,26 @@
 class Beaker
 {
 public:
-	Beaker(int width, int height);
-	Beaker(const std::string & strPath);
+	Beaker();
 
-	const std::string& GetPath() const { return c_strPath; }
+	const std::string& GetPath() const { return m_strPath; }
 	const cv::Mat& GetImage()const { return m_image; };
+	
+public:
+	// 用color指定的颜色初始化图像
+	void Load(int width, int height, const cv::Vec3b& color);
+	// 使用指定的文件作为图像
+	void Load(const std::string& path);
 
+public:
 	// 像素直拷
-	void Copy(const Beaker& src);
+	void CopyImage(const Beaker& src);
 	// 光学传送
 	void OpticalTransfer(const Beaker& src);
 private:
-	const std::string c_strPath; // 图像路径
-	cv::Mat m_image; // 原始图像
+	// TODO: 镜头参数
+	// TODO: 坐标参数
+	std::string m_strPath; // 图像路径
+	cv::Mat m_image; // 图像
 };
 

@@ -3,19 +3,12 @@
 
 using namespace std;
 
-Beaker::Beaker(int width, int height)
-	:c_strPath()
+Beaker::Beaker()
 {
-	m_image = cv::Mat(height, width, CV_8UC3, cv::Scalar(0xee, 0xee, 0xee));
+
 }
 
-Beaker::Beaker(const string& strPath)
-	:c_strPath(strPath)
-{
-	m_image = cv::imread(strPath);
-}
-
-void Beaker::Copy(const Beaker& src)
+void Beaker::CopyImage(const Beaker& src)
 {
 	const cv::Mat& source = src.GetImage();
 
@@ -30,7 +23,7 @@ void Beaker::Copy(const Beaker& src)
 				memcpy(pDst, pSrc, 3);
 			}
 			else {
-				memset(pDst, 0xee, 3);
+				// memset(pDst, 0x00, 3);
 			}
 		}
 	}
@@ -38,4 +31,16 @@ void Beaker::Copy(const Beaker& src)
 
 void Beaker::OpticalTransfer(const Beaker& src)
 {
+}
+
+void Beaker::Load(int width, int height, const cv::Vec3b& color)
+{
+	m_image = cv::Mat(height, width, CV_8UC3, color);
+	m_strPath.clear();
+}
+
+void Beaker::Load(const std::string& path)
+{
+	m_image = cv::imread(path);
+	m_strPath = path;
 }
