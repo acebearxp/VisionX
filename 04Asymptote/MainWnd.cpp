@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "MainWnd.h"
 
+using namespace std;
+
 const wchar_t CMainWnd::c_wszClsName[] = L"CMainWnd";
 
 ATOM CMainWnd::Register(HINSTANCE hInstance)
@@ -72,6 +74,7 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     ReleaseDC(hwnd, hdc);
 
     m_uptrBrushBK = unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::WhiteSmoke));
+    m_uptrPenGray = unique_ptr<Gdiplus::Pen>(new Gdiplus::Pen(Gdiplus::Color::Gray));
 
     return bRet;
 }
@@ -92,6 +95,10 @@ void CMainWnd::OnPaint(HWND hwnd)
 
     Gdiplus::Graphics g(m_hdcMem);
     g.FillRectangle(m_uptrBrushBK.get(), 0, 0, rc.right, rc.bottom);
+
+    // separator
+    const int nYSeparator = static_cast<int>((rc.bottom - rc.top) * m_fSeparator);
+    g.DrawLine(m_uptrPenGray.get(), rc.left, nYSeparator, rc.right, nYSeparator);
 
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hwnd, &ps);

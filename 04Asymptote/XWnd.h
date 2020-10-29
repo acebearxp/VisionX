@@ -1,7 +1,5 @@
 #pragma once
 
-using namespace std;
-
 class CXWnd
 {
 public:
@@ -10,7 +8,7 @@ public:
 
     operator HWND()const { return m_hwnd; }
 
-    virtual BOOL Create(HINSTANCE hInstance, const wstring &wstrTitle, const RECT &rect, const CXWnd &xwndParent, DWORD dwStyle);
+    virtual BOOL Create(HINSTANCE hInstance, const std::wstring &wstrTitle, const RECT &rect, const CXWnd &xwndParent, DWORD dwStyle);
 protected:
     HWND m_hwnd;
 

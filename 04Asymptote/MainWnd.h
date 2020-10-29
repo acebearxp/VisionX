@@ -2,8 +2,6 @@
 #include "XWnd.h"
 #include "resource.h"
 
-using namespace std;
-
 class CMainWnd final : public CXWnd
 {
 public:
@@ -24,12 +22,14 @@ protected:
 
     void OnGetMinMaxInfo(HWND hwnd, LPMINMAXINFO lpMinMaxInfo);
 private:
-    
+    // 分割线位置
+    const float m_fSeparator = 0.8f;
 
     // GDI+资源
     HDC m_hdcMem;
     HBITMAP m_hBmpMem;
-    unique_ptr<Gdiplus::SolidBrush> m_uptrBrushBK;
+    std::unique_ptr<Gdiplus::SolidBrush> m_uptrBrushBK;
+    std::unique_ptr<Gdiplus::Pen> m_uptrPenGray;
 
     // 计算默认窗口位置
     RECT calcDefaultWindowRect();
@@ -40,6 +40,6 @@ private:
 private:
     static const wchar_t c_wszClsName[];
     // 调整图像绘制区域以保持原始比例
-    static void resizeRectForImage(const unique_ptr<Gdiplus::Bitmap>& uptrBMP, Gdiplus::Rect& rc);
+    static void resizeRectForImage(const std::unique_ptr<Gdiplus::Bitmap>& uptrBMP, Gdiplus::Rect& rc);
 };
 

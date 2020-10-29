@@ -1,8 +1,6 @@
 #pragma once
 #include "MainWnd.h"
 
-using namespace std;
-
 class CApp
 {   
 public:
@@ -14,6 +12,6 @@ public:
 private:
     HINSTANCE m_hInstance;
     ULONG_PTR m_token;
-    unique_ptr<CMainWnd> m_uptrMainWnd;
+    std::unique_ptr<CMainWnd> m_uptrMainWnd;
 };
 

@@ -2,6 +2,8 @@
 #include "XWnd.h"
 #include "App.h"
 
+using namespace std;
+
 const wchar_t CXWnd::c_wszClsName[] = L"CXWnd";
 
 ATOM CXWnd::Register(HINSTANCE hInstance)
