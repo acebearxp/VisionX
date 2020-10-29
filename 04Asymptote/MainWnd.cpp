@@ -291,6 +291,12 @@ void CMainWnd::doWork()
 
         // 输出一次中间结果
         doWorkForOutput(true, false);
+
+        // 拼接
+        m_rx6k.Stitching();
+
+        // 输出最终结果
+        doWorkForOutput(true, true);
         
     }
     OutputDebugString(L"=== Thread ===> Exit\n");

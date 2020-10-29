@@ -24,3 +24,20 @@ void RX6000::LoadImages(const std::vector<std::string> vPaths)
 		}
 	}
 }
+
+void RX6000::Stitching()
+{
+	if (m_vuptrBeakers.size() > 0) {
+		const cv::Mat& image = m_vuptrBeakers[0]->GetImage();
+		m_uptrOutputBeaker = unique_ptr<Beaker>(new Beaker(image.cols, image.rows));
+		m_uptrOutputBeaker->Copy(image);
+	}
+	else {
+		m_uptrOutputBeaker.reset();
+	}
+}
+
+void RX6000::makeTest()
+{
+
+}

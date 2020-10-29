@@ -13,11 +13,14 @@ public:
 
 	// 加载图像
 	void LoadImages(const std::vector<std::string> vPaths);
-
+	// 处理过程
+	void Stitching();
 private:
 	// 输出
 	std::unique_ptr<Beaker> m_uptrOutputBeaker;
 	// Each beaker holds an image
 	std::vector<std::unique_ptr<Beaker>> m_vuptrBeakers;
+
+	void makeTest();
 };
 
