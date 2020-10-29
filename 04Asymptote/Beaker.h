@@ -1,6 +1,6 @@
 #pragma once
 
-// Each Beaker holds an image
+// 包含从一个特定坐标位置用一个特定镜头拍摄的平面图像
 class Beaker
 {
 public:
@@ -10,7 +10,10 @@ public:
 	const std::string& GetPath() const { return c_strPath; }
 	const cv::Mat& GetImage()const { return m_image; };
 
-	void Copy(const cv::Mat& src);
+	// 像素直拷
+	void Copy(const Beaker& src);
+	// 光学传送
+	void OpticalTransfer(const Beaker& src);
 private:
 	const std::string c_strPath; // 图像路径
 	cv::Mat m_image; // 原始图像

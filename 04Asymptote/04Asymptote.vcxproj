@@ -89,6 +89,8 @@
     <ClCompile Include="CVBitmap.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWnd.cpp" />
+    <ClCompile Include="Optica.cpp" />
+    <ClCompile Include="OpticaFisheyeSin.cpp" />
     <ClCompile Include="RX6000.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -101,6 +103,8 @@
     <ClInclude Include="Beaker.h" />
     <ClInclude Include="CVBitmap.h" />
     <ClInclude Include="MainWnd.h" />
+    <ClInclude Include="Optica.h" />
+    <ClInclude Include="OpticaFisheyeSin.h" />
     <ClInclude Include="RX6000.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
