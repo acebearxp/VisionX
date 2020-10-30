@@ -40,7 +40,7 @@ void RX6000::Compute()
 		const cv::Mat& image = m_vuptrBeakers[0]->GetImage();
 		m_uptrOutputBeaker = unique_ptr<Beaker>(new Beaker());
 		m_uptrOutputBeaker->Load(image.cols, image.rows, cv::Vec3b(0xee, 0xee, 0xee));
-		m_uptrOutputBeaker->SetOptica(unique_ptr<Optica>(new Optica()));
+		m_uptrOutputBeaker->SetOptica(unique_ptr<Optica>(new Optica(45.0f)));
 		// m_uptrOutputBeaker->CopyImage(*m_vuptrBeakers[0].get());
 		m_uptrOutputBeaker->OpticalTransfer(*m_vuptrBeakers[0].get());
 	}

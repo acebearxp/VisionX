@@ -7,8 +7,13 @@ public:
 	Optica();
 	Optica(float f135);
 
+	// 查找theta系数表
+	virtual float FindTheta(int x, int y);
 	// 生成theta系数表
-	void MakeTheta(int width, int height);
+	virtual void MakeTheta(int width, int height);
+
+	// 依据光学模型,从theta计算R(像素)
+	virtual float CalcRFromTheta(float fTheta, int width);
 private:
 	// 135全幅宽度(毫米)
 	const float c_fWidthFullFrame = 36.0f;

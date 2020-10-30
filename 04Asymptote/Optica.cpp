@@ -12,6 +12,11 @@ Optica::Optica(float f135)
 {
 }
 
+float Optica::FindTheta(int x, int y)
+{
+	return m_uptrTheta->at<float>(y, x);
+}
+
 void Optica::MakeTheta(int width, int height)
 {
 	// 中心点(以像素为单位)
@@ -33,4 +38,13 @@ void Optica::MakeTheta(int width, int height)
 			m_uptrTheta->at<float>(y, x) = atan2f(sqrtf(fU * fU + fV * fV), fFocus);
 		}
 	}
+}
+
+float Optica::CalcRFromTheta(float fTheta, int width)
+{
+	// 焦距(以像素为单位)
+	float fFocus = width * m_f135 / c_fWidthFullFrame;
+
+	// 标准镜头 r = f * tan(theta)
+	return fFocus * tanf(fTheta);
 }

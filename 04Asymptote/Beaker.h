@@ -16,6 +16,9 @@ public:
 	// 使用指定的文件作为图像
 	void Load(const std::string& path);
 
+	// 查找指定位置的像素颜色值
+	cv::Vec3b LookupPixel(float fTheta, int x, int y) const;
+
 	// 设定光学镜头
 	void SetOptica(std::unique_ptr<Optica>&& uptrOptica);
 
