@@ -18,7 +18,7 @@ void RX6000::LoadImages(const std::vector<std::string> vPaths)
 	m_vuptrBeakers.clear();
 
 	// 方位角间隔
-	const float fStepAzimuth = 2.0f * static_cast<float>(M_PI) / vPaths.size();
+	const float fStepAzimuth = 2.0f * static_cast<float>(M_PI) / 4;
 
 	for (int i = 0; i < vPaths.size(); i++) { 
 		const string& path = vPaths[i];
@@ -48,10 +48,13 @@ void RX6000::Compute()
 		const cv::Mat& image = m_vuptrBeakers[0]->GetImage();
 		m_uptrOutputBeaker = unique_ptr<Beaker>(new Beaker());
 		m_uptrOutputBeaker->Load(image.cols, image.rows, cv::Vec3b(0xee, 0xee, 0xee));
-		m_uptrOutputBeaker->SetAzimuth(3.14f/6); // 北偏东
+		m_uptrOutputBeaker->SetAzimuth(3.14f/4); // 北偏东
 		m_uptrOutputBeaker->SetOptica(unique_ptr<Optica>(new Optica()));
 
 		m_uptrOutputBeaker->OpticalTransfer(*m_vuptrBeakers[0].get());
+
+		if(m_vuptrBeakers.size() > 1)
+			m_uptrOutputBeaker->OpticalTransfer(*m_vuptrBeakers[1].get());
 	}
 	else {
 		m_uptrOutputBeaker.reset();

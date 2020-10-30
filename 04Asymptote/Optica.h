@@ -20,7 +20,7 @@ public:
 	virtual float CalcRFromTheta(float fTheta, int width);
 
 	// 计算空间变换后的坐标值
-	std::tuple<int,int> SpatialTransfer(int x, int y, const SpatialDiff& delta);
+	std::tuple<int,int> SpatialTransfer(int x, int y, int width, int height, const SpatialDiff& delta);
 protected:
 	// 135全幅宽度(毫米)
 	const float c_fWidthFullFrame = 36.0f;

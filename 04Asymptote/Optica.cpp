@@ -67,13 +67,25 @@ float Optica::CalcRFromTheta(float fTheta, int width)
 	return fFocus * tanf(fTheta);
 }
 
-tuple<int,int> Optica::SpatialTransfer(int x, int y, const SpatialDiff& delta)
+tuple<int,int> Optica::SpatialTransfer(int x, int y, int width, int height, const SpatialDiff& delta)
 {
-	float fFocus = x * m_f135 / c_fWidthFullFrame;
-	float fRaw = atan2f(1.0f*x, fFocus);
+	// 中心点(以像素为单位)
+	const float fX0 = width / 2.0f;
+	const float fY0 = height / 2.0f;
 
-	float x2 = tanf(fRaw + delta.fDeltaAzimuth) * fFocus;
-	float y2 = 1.0f * y;
+	// 焦距(以像素为单位)
+	float fFocus = x * m_f135 / c_fWidthFullFrame;
+
+	float fU = x - fX0;
+	float fV = y - fY0;
+
+	float fRaw = atan2f(fU, fFocus);
+
+	float fU2 = tanf(fRaw + delta.fDeltaAzimuth) * fFocus;
+	float fV2 = fV;
+
+	int x2 = static_cast<int>(fU2 + fX0);
+	int y2 = static_cast<int>(fV2 + fY0);
 	
-	return tuple<int, int>(static_cast<int>(x2), static_cast<int>(y2));
+	return tuple<int, int>(x2, y2);
 }

@@ -31,6 +31,7 @@ void Beaker::CopyImage(const Beaker& src)
 
 void Beaker::OpticalTransfer(const Beaker& src)
 {
+	cv::Vec3b blackColor = cv::Vec3b();
 	// 逐点计算
 	for (int y = 0; y < m_image.rows; y++) {
 		for (int x = 0; x < m_image.cols; x++) {
@@ -42,7 +43,9 @@ void Beaker::OpticalTransfer(const Beaker& src)
 			// 根据fTheta,x,y查找对应的像素
 			cv::Vec3b color = src.LookupPixel(fTheta, x2, y2);
 
-			m_image.at<cv::Vec3b>(y, x) = color;
+			// TODO: 黑色保留来的色彩
+			if(color != blackColor)
+				m_image.at<cv::Vec3b>(y, x) = color;
 		}
 	}
 }
@@ -50,7 +53,7 @@ void Beaker::OpticalTransfer(const Beaker& src)
 std::tuple<int, int> Beaker::SpatialTransfer(int x, int y, const Beaker& src)
 {	
 	auto delta = m_spatial - src.m_spatial;
-	return m_uptrOptica->SpatialTransfer(x, y, delta);
+	return m_uptrOptica->SpatialTransfer(x, y, m_image.cols, m_image.rows, delta);
 }
 
 void Beaker::Load(int width, int height, const cv::Vec3b& color)
@@ -90,7 +93,7 @@ cv::Vec3b Beaker::LookupPixel(float fTheta, int x, int y) const
 
 	// 如果在图像外部设置为黑色
 	if (nU < 0 || nU >= m_image.cols || nV <0 || nV >= m_image.rows)
-		return cv::Vec3b(0, 0, 0);
+		return cv::Vec3b();
 	else
 		return m_image.at<cv::Vec3b>(nV, nU);
 }
