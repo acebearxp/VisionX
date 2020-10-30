@@ -1,12 +1,12 @@
 #pragma once
 #include "Optica.h"
 
-// 正弦鱼眼镜头 r = f * sin(theta)
-class OpticaFisheyeSin : public Optica
+// 等面积鱼眼镜头 r=2f sin（θ/2） 
+class OpticaFisheyeArea : public Optica
 {
 public:
-	OpticaFisheyeSin();
-	OpticaFisheyeSin(float f135);
+	OpticaFisheyeArea();
+	OpticaFisheyeArea(float f135);
 
 	// 生成theta系数表
 	void MakeTheta(int width, int height) override;

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "RX6000.h"
+#include "OpticaFisheyeArea.h"
 #include "OpticaFisheyeSin.h"
 
 using namespace std;
@@ -26,7 +27,7 @@ void RX6000::LoadImages(const std::vector<std::string> vPaths)
 			auto uptrBeaker = unique_ptr<Beaker>(new Beaker());
 			uptrBeaker->Load(path);
 
-			auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeSin());
+			auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeSin(15.0f));
 			uptrBeaker->SetOptica(move(uptrOptica));
 
 			m_vuptrBeakers.push_back(move(uptrBeaker));
@@ -40,8 +41,8 @@ void RX6000::Compute()
 		const cv::Mat& image = m_vuptrBeakers[0]->GetImage();
 		m_uptrOutputBeaker = unique_ptr<Beaker>(new Beaker());
 		m_uptrOutputBeaker->Load(image.cols, image.rows, cv::Vec3b(0xee, 0xee, 0xee));
-		m_uptrOutputBeaker->SetOptica(unique_ptr<Optica>(new Optica(45.0f)));
-		// m_uptrOutputBeaker->CopyImage(*m_vuptrBeakers[0].get());
+		m_uptrOutputBeaker->SetOptica(unique_ptr<Optica>(new Optica(15.0f)));
+
 		m_uptrOutputBeaker->OpticalTransfer(*m_vuptrBeakers[0].get());
 	}
 	else {
