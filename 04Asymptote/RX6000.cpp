@@ -17,19 +17,26 @@ void RX6000::LoadImages(const std::vector<std::string> vPaths)
 
 	m_vuptrBeakers.clear();
 
+	// 方位角间隔
+	const float fStepAzimuth = 2.0f * static_cast<float>(M_PI) / vPaths.size();
+
 	for (int i = 0; i < vPaths.size(); i++) { 
 		const string& path = vPaths[i];
 		auto search = mapBeakers.find(path);
 		if (search != mapBeakers.end()) {
+			search->second->SetAzimuth(fStepAzimuth * i);
 			m_vuptrBeakers.push_back(move(search->second));
 		}
 		else {
 			auto uptrBeaker = unique_ptr<Beaker>(new Beaker());
 			uptrBeaker->Load(path);
+			uptrBeaker->SetAzimuth(fStepAzimuth * i);
 
-			auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeSin(15.0f));
+			// auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeSin(15.0f));
+			auto uptrOptica = unique_ptr<Optica>(new Optica());
+
 			uptrBeaker->SetOptica(move(uptrOptica));
-
+			
 			m_vuptrBeakers.push_back(move(uptrBeaker));
 		}
 	}
@@ -41,7 +48,8 @@ void RX6000::Compute()
 		const cv::Mat& image = m_vuptrBeakers[0]->GetImage();
 		m_uptrOutputBeaker = unique_ptr<Beaker>(new Beaker());
 		m_uptrOutputBeaker->Load(image.cols, image.rows, cv::Vec3b(0xee, 0xee, 0xee));
-		m_uptrOutputBeaker->SetOptica(unique_ptr<Optica>(new Optica(15.0f)));
+		m_uptrOutputBeaker->SetAzimuth(3.14f/6); // 北偏东
+		m_uptrOutputBeaker->SetOptica(unique_ptr<Optica>(new Optica()));
 
 		m_uptrOutputBeaker->OpticalTransfer(*m_vuptrBeakers[0].get());
 	}

@@ -34,13 +34,23 @@ void Beaker::OpticalTransfer(const Beaker& src)
 	// 逐点计算
 	for (int y = 0; y < m_image.rows; y++) {
 		for (int x = 0; x < m_image.cols; x++) {
-			float fTheta = m_uptrOptica->FindTheta(x, y);
+
+			int x2, y2;
+			tie(x2, y2) = SpatialTransfer(x, y, src);
+			float fTheta = m_uptrOptica->CalcTheta(x2, y2, m_image.cols, m_image.rows);
 
 			// 根据fTheta,x,y查找对应的像素
-			cv::Vec3b color = src.LookupPixel(fTheta, x, y);
+			cv::Vec3b color = src.LookupPixel(fTheta, x2, y2);
+
 			m_image.at<cv::Vec3b>(y, x) = color;
 		}
 	}
+}
+
+std::tuple<int, int> Beaker::SpatialTransfer(int x, int y, const Beaker& src)
+{	
+	auto delta = m_spatial - src.m_spatial;
+	return m_uptrOptica->SpatialTransfer(x, y, delta);
 }
 
 void Beaker::Load(int width, int height, const cv::Vec3b& color)

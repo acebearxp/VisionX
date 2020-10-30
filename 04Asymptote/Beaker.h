@@ -1,5 +1,6 @@
 #pragma once
 #include "Optica.h"
+#include "Spatial.h"
 
 // 包含从一个特定坐标位置用一个特定镜头拍摄的平面图像
 class Beaker
@@ -19,6 +20,8 @@ public:
 	// 查找指定位置的像素颜色值
 	cv::Vec3b LookupPixel(float fTheta, int x, int y) const;
 
+	// 设定方位角(弧度,N=0 E=Pi/2)
+	void SetAzimuth(float fAzimuth) { m_spatial.SetAzimuth(fAzimuth); };
 	// 设定光学镜头
 	void SetOptica(std::unique_ptr<Optica>&& uptrOptica);
 
@@ -27,8 +30,11 @@ public:
 	void CopyImage(const Beaker& src);
 	// 光学传送
 	void OpticalTransfer(const Beaker& src);
+	// 把本地坐值转换为源坐标值
+	std::tuple<int, int> SpatialTransfer(int x, int y, const Beaker& src);
 private:
-	// TODO: 坐标参数
+	// 空间关系
+	Spatial m_spatial;
 	// 光学镜头
 	std::unique_ptr<Optica> m_uptrOptica;
 

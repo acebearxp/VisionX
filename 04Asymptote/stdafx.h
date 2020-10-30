@@ -8,6 +8,10 @@
 #include <memory>
 #include <thread>
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+
 #include <gdiplus.h>
 #pragma comment(lib, "gdiplus.lib")
 

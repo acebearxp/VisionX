@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Spatial.h"
+
 // 标准镜头光学单元
 class Optica
 {
@@ -9,11 +11,16 @@ public:
 
 	// 查找theta系数表
 	float FindTheta(int x, int y);
+	// 计算theta
+	float CalcTheta(int x, int y, int width, int height);
 	
 	// 生成theta系数表
 	virtual void MakeTheta(int width, int height);
 	// 依据光学模型,从theta计算R(像素)
 	virtual float CalcRFromTheta(float fTheta, int width);
+
+	// 计算空间变换后的坐标值
+	std::tuple<int,int> SpatialTransfer(int x, int y, const SpatialDiff& delta);
 protected:
 	// 135全幅宽度(毫米)
 	const float c_fWidthFullFrame = 36.0f;

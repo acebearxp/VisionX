@@ -17,6 +17,24 @@ float Optica::FindTheta(int x, int y)
 	return m_uptrTheta->at<float>(y, x);
 }
 
+float Optica::CalcTheta(int x, int y, int width, int height)
+{
+	// 中心点(以像素为单位)
+	const float fX0 = width / 2.0f;
+	const float fY0 = height / 2.0f;
+
+	// 焦距(以像素为单位)
+	float fFocus = width * m_f135 / c_fWidthFullFrame;
+	
+	float fU = x - fX0;
+	float fV = y - fY0;
+
+	// 标准镜头 r = f * tan(theta)
+	float fTheta = atan2f(sqrtf(fU * fU + fV * fV), fFocus);
+
+	return fTheta;
+}
+
 void Optica::MakeTheta(int width, int height)
 {
 	// 中心点(以像素为单位)
@@ -47,4 +65,15 @@ float Optica::CalcRFromTheta(float fTheta, int width)
 
 	// 标准镜头 r = f * tan(theta)
 	return fFocus * tanf(fTheta);
+}
+
+tuple<int,int> Optica::SpatialTransfer(int x, int y, const SpatialDiff& delta)
+{
+	float fFocus = x * m_f135 / c_fWidthFullFrame;
+	float fRaw = atan2f(1.0f*x, fFocus);
+
+	float x2 = tanf(fRaw + delta.fDeltaAzimuth) * fFocus;
+	float y2 = 1.0f * y;
+	
+	return tuple<int, int>(static_cast<int>(x2), static_cast<int>(y2));
 }

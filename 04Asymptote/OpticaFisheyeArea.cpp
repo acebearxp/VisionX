@@ -6,7 +6,7 @@ using namespace std;
 OpticaFisheyeArea::OpticaFisheyeArea()
 {
 	// 默认全幅180视角, 这种鱼眼镜头可以比180度更大的视角
-	const float fAngleFull = 3.14159265358f;
+	constexpr float fAngleFull = static_cast<float>(M_PI);
 	OpticaFisheyeArea(c_fWidthFullFrame / (2.0f * sinf(fAngleFull / 4.0f)));
 }
 
