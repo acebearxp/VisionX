@@ -31,6 +31,7 @@ void Beaker::CopyImage(const Beaker& src)
 
 void Beaker::OpticalTransfer(const Beaker& src)
 {
+	m_uptrOptica->MakeTheta(m_image.cols, m_image.rows);
 }
 
 void Beaker::Load(int width, int height, const cv::Vec3b& color)
@@ -43,4 +44,9 @@ void Beaker::Load(const std::string& path)
 {
 	m_image = cv::imread(path);
 	m_strPath = path;
+}
+
+void Beaker::SetOptica(unique_ptr<Optica>&& uptrOptica)
+{
+	m_uptrOptica = move(uptrOptica);
 }

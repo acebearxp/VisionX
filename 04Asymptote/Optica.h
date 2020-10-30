@@ -1,7 +1,20 @@
 #pragma once
 
-// 镜头光学单元
+// 标准镜头光学单元
 class Optica
 {
+public:
+	Optica();
+	Optica(float f135);
+
+	// 生成theta系数表
+	void MakeTheta(int width, int height);
+private:
+	// 135全幅宽度(毫米)
+	const float c_fWidthFullFrame = 36.0f;
+	// 135等效焦距(毫米)
+	float m_f135 = 50.0f;
+	// 每一点对应的theta值,像素入射光线和光轴夹角(弧度)
+	std::unique_ptr<cv::Mat> m_uptrTheta;
 };
 
