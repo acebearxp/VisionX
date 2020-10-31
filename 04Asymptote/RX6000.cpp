@@ -18,7 +18,7 @@ void RX6000::LoadImages(const std::vector<std::string> vPaths)
 	m_vuptrBeakers.clear();
 
 	// ·½Î»½Ç¼ä¸ô
-	const float fStepAzimuth = 2.0f * static_cast<float>(M_PI) / 4;
+	const float fStepAzimuth = static_cast<float>(M_PI_2);;
 
 	for (int i = 0; i < vPaths.size(); i++) { 
 		const string& path = vPaths[i];
@@ -50,10 +50,19 @@ void RX6000::Compute()
 		m_uptrOutputBeaker->SetAzimuth(3.14f/4); // ±±Æ«¶«
 		m_uptrOutputBeaker->SetOptica(unique_ptr<Optica>(new Optica(15)));
 
-		m_uptrOutputBeaker->OpticalTransfer(*m_vuptrBeakers[0].get());
 
+		RECT rc;
+		rc.left = 0, rc.right = image.cols;
+		rc.top = 0, rc.bottom = image.rows;
+		// ×ó°ë·ù
+		RECT rcLeft = rc;
+		rcLeft.right = rc.right / 2;
+		m_uptrOutputBeaker->OpticalTransfer(*m_vuptrBeakers[0].get(), rcLeft);
+	    // ÓÒ°ë·ù
+		RECT rcRight = rc;
+		rcRight.left = rc.right / 2;
 		if(m_vuptrBeakers.size() > 1)
-			m_uptrOutputBeaker->OpticalTransfer(*m_vuptrBeakers[1].get());
+			m_uptrOutputBeaker->OpticalTransfer(*m_vuptrBeakers[1].get(), rcRight);
 	}
 	else {
 		m_uptrOutputBeaker.reset();

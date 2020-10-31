@@ -29,7 +29,7 @@ public:
 	// 像素直拷
 	void CopyImage(const Beaker& src);
 	// 光学传送
-	void OpticalTransfer(const Beaker& src);
+	void OpticalTransfer(const Beaker& src, const RECT& rc);
 	// 把本地坐值转换为源坐标值
 	std::tuple<int, int> SpatialTransfer(int x, int y, const Beaker& src);
 private:

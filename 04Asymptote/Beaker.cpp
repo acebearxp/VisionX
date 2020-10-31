@@ -29,22 +29,25 @@ void Beaker::CopyImage(const Beaker& src)
 	}
 }
 
-void Beaker::OpticalTransfer(const Beaker& src)
+void Beaker::OpticalTransfer(const Beaker& src, const RECT& rc)
 {
 	// 逐点计算
 	for (int y = 0; y < m_image.rows; y++) {
 		for (int x = 0; x < m_image.cols; x++) {
 
-			int x2, y2;
-			tie(x2, y2) = SpatialTransfer(x, y, src);
-			float fTheta = m_uptrOptica->CalcTheta(x2, y2, m_image.cols, m_image.rows);
+			if (x >= rc.left && x < rc.right && y >= rc.top && y < rc.bottom) {
 
-			// 根据fTheta,x,y查找对应的像素
-			auto uptrColor = src.LookupPixel(fTheta, x2, y2);
+				int x2, y2;
+				tie(x2, y2) = SpatialTransfer(x, y, src);
+				float fTheta = m_uptrOptica->CalcTheta(x2, y2, m_image.cols, m_image.rows);
 
-			// 找不到的保留原来的色彩
-			if(uptrColor)
-				m_image.at<cv::Vec3b>(y, x) = *uptrColor;
+				// 根据fTheta,x,y查找对应的像素
+				auto uptrColor = src.LookupPixel(fTheta, x2, y2);
+
+				// 找不到的保留原来的色彩
+				if (uptrColor)
+					m_image.at<cv::Vec3b>(y, x) = *uptrColor;
+			}
 		}
 	}
 }
