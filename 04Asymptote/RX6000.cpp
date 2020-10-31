@@ -32,8 +32,7 @@ void RX6000::LoadImages(const std::vector<std::string> vPaths)
 			uptrBeaker->Load(path);
 			uptrBeaker->SetAzimuth(fStepAzimuth * i);
 
-			// auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeSin(15.0f));
-			auto uptrOptica = unique_ptr<Optica>(new Optica());
+			auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeSin(15.0f));
 
 			uptrBeaker->SetOptica(move(uptrOptica));
 			
@@ -49,7 +48,7 @@ void RX6000::Compute()
 		m_uptrOutputBeaker = unique_ptr<Beaker>(new Beaker());
 		m_uptrOutputBeaker->Load(image.cols, image.rows, cv::Vec3b(0xee, 0xee, 0xee));
 		m_uptrOutputBeaker->SetAzimuth(3.14f/4); // ±±Æ«¶«
-		m_uptrOutputBeaker->SetOptica(unique_ptr<Optica>(new Optica()));
+		m_uptrOutputBeaker->SetOptica(unique_ptr<Optica>(new Optica(15)));
 
 		m_uptrOutputBeaker->OpticalTransfer(*m_vuptrBeakers[0].get());
 

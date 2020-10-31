@@ -31,7 +31,6 @@ void Beaker::CopyImage(const Beaker& src)
 
 void Beaker::OpticalTransfer(const Beaker& src)
 {
-	cv::Vec3b blackColor = cv::Vec3b();
 	// 逐点计算
 	for (int y = 0; y < m_image.rows; y++) {
 		for (int x = 0; x < m_image.cols; x++) {
@@ -41,11 +40,11 @@ void Beaker::OpticalTransfer(const Beaker& src)
 			float fTheta = m_uptrOptica->CalcTheta(x2, y2, m_image.cols, m_image.rows);
 
 			// 根据fTheta,x,y查找对应的像素
-			cv::Vec3b color = src.LookupPixel(fTheta, x2, y2);
+			auto uptrColor = src.LookupPixel(fTheta, x2, y2);
 
-			// TODO: 黑色保留来的色彩
-			if(color != blackColor)
-				m_image.at<cv::Vec3b>(y, x) = color;
+			// 找不到的保留原来的色彩
+			if(uptrColor)
+				m_image.at<cv::Vec3b>(y, x) = *uptrColor;
 		}
 	}
 }
@@ -76,7 +75,7 @@ void Beaker::Load(const std::string& path)
 		m_uptrOptica->MakeTheta(m_image.cols, m_image.rows);
 }
 
-cv::Vec3b Beaker::LookupPixel(float fTheta, int x, int y) const
+unique_ptr<cv::Vec3b> Beaker::LookupPixel(float fTheta, int x, int y) const
 {
 	// 中心点(以像素为单位)
 	const float fX0 = m_image.cols / 2.0f;
@@ -91,11 +90,13 @@ cv::Vec3b Beaker::LookupPixel(float fTheta, int x, int y) const
 	int nU = static_cast<int>(roundf(fX0 + fU));
 	int nV = static_cast<int>(roundf(fY0 + fV));
 
-	// 如果在图像外部设置为黑色
-	if (nU < 0 || nU >= m_image.cols || nV <0 || nV >= m_image.rows)
-		return cv::Vec3b();
-	else
-		return m_image.at<cv::Vec3b>(nV, nU);
+	// 如果找不到对应的点则返回nullptr
+	if (nU < 0 || nU >= m_image.cols || nV < 0 || nV >= m_image.rows)
+		return nullptr;
+	else {
+		cv::Vec3b color = m_image.at<cv::Vec3b>(nV, nU);
+		return unique_ptr<cv::Vec3b>(new cv::Vec3b(color));
+	}
 }
 
 void Beaker::SetOptica(unique_ptr<Optica>&& uptrOptica)

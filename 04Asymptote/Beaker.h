@@ -18,7 +18,7 @@ public:
 	void Load(const std::string& path);
 
 	// 查找指定位置的像素颜色值
-	cv::Vec3b LookupPixel(float fTheta, int x, int y) const;
+	std::unique_ptr<cv::Vec3b> LookupPixel(float fTheta, int x, int y) const;
 
 	// 设定方位角(弧度,N=0 E=Pi/2)
 	void SetAzimuth(float fAzimuth) { m_spatial.SetAzimuth(fAzimuth); };
