@@ -22,6 +22,8 @@ public:
 
 	// 设定方位角(弧度,N=0 E=Pi/2)
 	void SetAzimuth(float fAzimuth) { m_spatial.SetAzimuth(fAzimuth); };
+	// 设定俯仰角(弧度,上正下负)
+	void SetPitch(float fPitch) { m_spatial.SetPitch(fPitch); }
 	// 设定光学镜头
 	void SetOptica(std::unique_ptr<Optica>&& uptrOptica);
 

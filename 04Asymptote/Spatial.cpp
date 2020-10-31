@@ -7,11 +7,11 @@ Spatial::Spatial()
 
 SpatialDiff Spatial::operator-(const Spatial& right)
 {
-    // 当前只计算了水平方位角
-    float fDeltaAzimuth = m_fAzimuth + m_fYaw - (right.m_fAzimuth + right.m_fYaw);
-    
     SpatialDiff delta;
-    delta.fDeltaAzimuth = fDeltaAzimuth;
+    // 水平
+    delta.fDeltaAzimuth = (m_fAzimuth + m_fYaw) - (right.m_fAzimuth + right.m_fYaw);
+    // 垂直
+    delta.fDeltaPitch = m_fPitch - right.m_fPitch;
 
     return delta;
 }

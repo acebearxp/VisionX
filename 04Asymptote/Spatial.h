@@ -4,7 +4,8 @@
 class SpatialDiff
 {
 public:
-	float fDeltaAzimuth = 0.0f;
+	float fDeltaAzimuth = 0.0f; // 水平
+	float fDeltaPitch = 0.0f; // 垂直
 };
 
 // 空间关系
@@ -15,6 +16,7 @@ public:
 	Spatial(float fAzimuth) { m_fAzimuth = fAzimuth; };
 
 	void SetAzimuth(float fAzimuth) { m_fAzimuth = fAzimuth; }
+	void SetPitch(float fPitch) { m_fPitch = fPitch; }
 
 	SpatialDiff operator-(const Spatial& right);
 
@@ -25,6 +27,9 @@ private:
 	float m_fYaw = 0.0f;
 	// 俯仰偏向角(弧度 上正下负)
 	float m_fPitch = 0.0f;
+	// 旋转(弧度)
+	float m_fRotate = 0.0f;
 	// TODO: 空间位置(x,y,z)
+	
 };
 
