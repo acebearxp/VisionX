@@ -62,20 +62,12 @@ void Beaker::Load(int width, int height, const cv::Vec3b& color)
 {
 	m_image = cv::Mat(height, width, CV_8UC3, color);
 	m_strPath.clear();
-
-	// 重新计算theta
-	if (m_uptrOptica)
-		m_uptrOptica->MakeTheta(width, height);
 }
 
 void Beaker::Load(const std::string& path)
 {
 	m_image = cv::imread(path);
 	m_strPath = path;
-
-	// 重新计算theta
-	if (m_uptrOptica)
-		m_uptrOptica->MakeTheta(m_image.cols, m_image.rows);
 }
 
 unique_ptr<cv::Vec3b> Beaker::LookupPixel(float fTheta, int x, int y) const
@@ -105,8 +97,4 @@ unique_ptr<cv::Vec3b> Beaker::LookupPixel(float fTheta, int x, int y) const
 void Beaker::SetOptica(unique_ptr<Optica>&& uptrOptica)
 {
 	m_uptrOptica = move(uptrOptica);
-
-	// 计算theta
-	if(!m_image.empty())
-		m_uptrOptica->MakeTheta(m_image.cols, m_image.rows);
 }
