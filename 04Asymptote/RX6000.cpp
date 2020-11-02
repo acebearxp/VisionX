@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "RX6000.h"
+#include "OpticaFisheyeTanHalf.h"
 #include "OpticaFisheyeArea.h"
 #include "OpticaFisheyeSin.h"
 
@@ -16,7 +17,7 @@ void RX6000::LoadImages(const std::vector<std::string> vPaths)
 		fStepAzimuth = static_cast<float>(2.0f * M_PI / vPaths.size());
 	}
 	// ¸©Ñö½Ç
-	float fPitch[] = { -0.28f, -0.20f, 0.0f, 0.0f };
+	float fPitch[] = { -0.45f, -0.3f, 0.0f, 0.0f };
 
 	for (int i = 0; i < vPaths.size(); i++) {
 		const string& path = vPaths[i];
@@ -24,13 +25,16 @@ void RX6000::LoadImages(const std::vector<std::string> vPaths)
 		uptrBeaker->Load(path);
 		
 		// auto uptrOptica = unique_ptr<Optica>(new Optica(15.0f));
-		auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeSin(15.0f));
+		auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeTanHalf(15.0f));
+		// auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeArea(15.0f));
+		// auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeSin(15.0f));
 		uptrBeaker->SetOptica(move(uptrOptica));
 
 		uptrBeaker->SetAzimuth(fStepAzimuth * i);
 
-		if (i < sizeof(fPitch) / sizeof(float)) {}
+		if (i < sizeof(fPitch) / sizeof(float)) {
 			uptrBeaker->SetPitch(fPitch[i]);
+		}
 
 		m_vuptrBeakers.push_back(move(uptrBeaker));
 	}

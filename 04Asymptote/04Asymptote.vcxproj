@@ -92,6 +92,7 @@
     <ClCompile Include="Optica.cpp" />
     <ClCompile Include="OpticaFisheyeArea.cpp" />
     <ClCompile Include="OpticaFisheyeSin.cpp" />
+    <ClCompile Include="OpticaFisheyeTanHalf.cpp" />
     <ClCompile Include="RX6000.cpp" />
     <ClCompile Include="Spatial.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -108,6 +109,7 @@
     <ClInclude Include="Optica.h" />
     <ClInclude Include="OpticaFisheyeArea.h" />
     <ClInclude Include="OpticaFisheyeSin.h" />
+    <ClInclude Include="OpticaFisheyeTanHalf.h" />
     <ClInclude Include="RX6000.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Spatial.h" />
