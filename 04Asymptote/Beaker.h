@@ -26,6 +26,8 @@ public:
 	void SetPitch(float fPitch) { m_spatial.SetPitch(fPitch); }
 	// 设定光学镜头
 	void SetOptica(std::unique_ptr<Optica>&& uptrOptica);
+	// 设定鱼眼镜头参数
+	void SetFisheyeK(const std::vector<float>& vk);
 
 public:
 	// 像素直拷

@@ -284,10 +284,13 @@ void CMainWnd::doWork()
         OutputDebugString(L"=== Thread ===> Working...\n");
 
         // 处理输入
-        vector<wstring> vPaths = doWorkForInput();
+        vector<float> vk(5);
+        vector<wstring> vPaths = doWorkForInput(vk);
 
         // 装载图像
         m_rx6k.LoadImages(convert(vPaths));
+        // 设定参数
+        m_rx6k.SetFisheye(vk);
 
         // 输出一次中间结果
         doWorkForOutput(true, false);
@@ -302,11 +305,15 @@ void CMainWnd::doWork()
     OutputDebugString(L"=== Thread ===> Exit\n");
 }
 
-vector<wstring> CMainWnd::doWorkForInput()
+vector<wstring> CMainWnd::doWorkForInput(std::vector<float>& vk)
 {
     vector<wstring> vPaths;
     EnterCriticalSection(&m_csRX6K);
     vPaths = m_vPaths;
+    vk.clear();
+    for (auto i = m_vk.begin(); i != m_vk.end(); i++) {
+        vk.push_back(*i);
+    }
     LeaveCriticalSection(&m_csRX6K);
 
 #ifdef _DEBUG

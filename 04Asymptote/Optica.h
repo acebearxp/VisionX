@@ -9,8 +9,6 @@ public:
 	Optica();
 	Optica(float f135);
 
-	// 查找theta系数表
-	float FindTheta(int x, int y);
 	// 计算theta
 	float CalcTheta(int x, int y, int width, int height);
 	// 依据光学模型,从theta计算R(像素)
@@ -18,6 +16,9 @@ public:
 
 	// 计算空间变换后的坐标值
 	std::tuple<int,int> SpatialTransfer(int x, int y, int width, int height, const SpatialDiff& delta);
+
+	// 设定鱼眼镜头参数
+	virtual void SetFisheyeK(const std::vector<float>& vk) {}
 protected:
 	// 135全幅宽度(毫米)
 	const float c_fWidthFullFrame = 36.0f;

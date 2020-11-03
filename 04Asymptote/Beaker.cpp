@@ -98,3 +98,8 @@ void Beaker::SetOptica(unique_ptr<Optica>&& uptrOptica)
 {
 	m_uptrOptica = move(uptrOptica);
 }
+
+void Beaker::SetFisheyeK(const std::vector<float>& vk)
+{
+	m_uptrOptica->SetFisheyeK(vk);
+}

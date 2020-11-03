@@ -1,6 +1,7 @@
 #pragma once
 #include "Optica.h"
 
+// ≥‡∆Ω”„—€æµÕ∑
 class OpticaFisheyeTanHalf : public Optica
 {
 public:

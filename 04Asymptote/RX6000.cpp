@@ -3,6 +3,7 @@
 #include "OpticaFisheyeTanHalf.h"
 #include "OpticaFisheyeArea.h"
 #include "OpticaFisheyeSin.h"
+#include "OpticaFisheyeTheta.h"
 
 using namespace std;
 
@@ -25,9 +26,10 @@ void RX6000::LoadImages(const std::vector<std::string> vPaths)
 		uptrBeaker->Load(path);
 		
 		// auto uptrOptica = unique_ptr<Optica>(new Optica(15.0f));
-		auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeTanHalf(15.0f));
+		// auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeTanHalf(15.0f));
 		// auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeArea(15.0f));
 		// auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeSin(15.0f));
+		auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeTheta(15.0f));
 		uptrBeaker->SetOptica(move(uptrOptica));
 
 		uptrBeaker->SetAzimuth(fStepAzimuth * i);
@@ -37,6 +39,13 @@ void RX6000::LoadImages(const std::vector<std::string> vPaths)
 		}
 
 		m_vuptrBeakers.push_back(move(uptrBeaker));
+	}
+}
+
+void RX6000::SetFisheye(const std::vector<float>& vk)
+{
+	for (auto i = m_vuptrBeakers.begin(); i != m_vuptrBeakers.end(); i++) {
+		(*i)->SetFisheyeK(vk);
 	}
 }
 

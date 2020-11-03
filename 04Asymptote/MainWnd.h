@@ -53,6 +53,8 @@ private:
     CRITICAL_SECTION m_csRX6K;
     // 待处理图片路径
     std::vector<std::wstring> m_vPaths;
+    // 鱼眼系数
+    std::vector<float> m_vk = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     // 输出的图像
     std::unique_ptr<CVBitmap> m_uptrOutputBitmap;
     // 输入的图像或中间结果
@@ -63,7 +65,7 @@ private:
 
     // 后台任务
     void doWork();
-    std::vector<std::wstring> doWorkForInput();
+    std::vector<std::wstring> doWorkForInput(std::vector<float>& vk);
     void doWorkForOutput(bool bUpdateMiddle, bool bUpdateFinal);
 private:
     static const wchar_t c_wszClsName[];
