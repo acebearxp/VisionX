@@ -17,6 +17,7 @@ public:
 	void SetFocus135(float f135);
 	void SetFisheye(const std::vector<float>& vk);
 	void SetPitch(const std::vector<float>& vPitch);
+	void SetYaw(const std::vector<float>& vYaw);
 	// º∆À„ ‰≥ˆ
 	void Compute();
 private:

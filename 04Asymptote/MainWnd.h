@@ -62,8 +62,10 @@ private:
     std::vector<float> m_vk = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f };
     // 135等效焦距(mm)
     float m_fFocus135 = 15.0f;
+    // 水平偏角
+    std::vector<float> m_vYaw = { 0.0f, 0.0f, 0.0f, 0.0f };
     // 俯仰角
-    std::vector<float> m_vPitch = { 0.0f, 0.0f, 0.0f };
+    std::vector<float> m_vPitch = { 0.0f, 0.0f, 0.0f, 0.0f };
     // 系数调节步长
     float m_fStep = 0.1f;
     // 输出的图像
@@ -76,7 +78,7 @@ private:
 
     // 后台任务
     void doWork();
-    std::vector<std::wstring> doWorkForInput(float& f135, std::vector<float>& vk, std::vector<float>& vPitch);
+    std::vector<std::wstring> doWorkForInput(float& f135, std::vector<float>& vk, std::vector<float>& vPitch, std::vector<float>& vYaw);
     void doWorkForOutput(bool bUpdateMiddle, bool bUpdateFinal);
 private:
     static const wchar_t c_wszClsName[];

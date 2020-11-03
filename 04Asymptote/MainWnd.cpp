@@ -158,9 +158,11 @@ void CMainWnd::OnPaint(HWND hwnd)
     swprintf_s(buf, L"%5s: %3.3f", L"focus", m_fFocus135);
     g.DrawString(buf, -1, m_uptrFontSong.get(), Gdiplus::PointF(0.0f, fLineHeight), m_uptrBrushText.get());
     swprintf_s(buf, L"%5s: %3.3f", L"step", m_fStep);
-    g.DrawString(buf, -1, m_uptrFontSong.get(), Gdiplus::PointF(0.0f, fLineHeight*2), m_uptrBrushText.get());
+    g.DrawString(buf, -1, m_uptrFontSong.get(), Gdiplus::PointF(0.0f, fLineHeight * 2), m_uptrBrushText.get());
     swprintf_s(buf, L"%5s: %3.3f, %3.3f", L"pitch", m_vPitch[0], m_vPitch[1]);
     g.DrawString(buf, -1, m_uptrFontSong.get(), Gdiplus::PointF(0.0f, fLineHeight * 3), m_uptrBrushText.get());
+    swprintf_s(buf, L"%5s: %3.3f, %3.3f", L"Yaw", m_vYaw[0], m_vYaw[1]);
+    g.DrawString(buf, -1, m_uptrFontSong.get(), Gdiplus::PointF(0.0f, fLineHeight * 4), m_uptrBrushText.get());
 
 
     PAINTSTRUCT ps;
@@ -229,6 +231,14 @@ void CMainWnd::OnKey(HWND hwnd, UINT vk, BOOL fDown, int cRepeat, UINT flags)
             else if (vk == L'S') m_vPitch[0] -= m_fStep;
             else if (vk == L'I') m_vPitch[1] += m_fStep;
             else if (vk == L'K') m_vPitch[1] -= m_fStep;
+            bRefresh = true;
+        }
+
+        if (vk == L'A' || vk == L'D' || vk == L'J' || vk == L'L') {
+            if (vk == L'A') m_vYaw[0] += m_fStep;
+            else if (vk == L'D') m_vYaw[0] -= m_fStep;
+            else if (vk == L'J') m_vYaw[1] += m_fStep;
+            else if (vk == L'L') m_vYaw[1] -= m_fStep;
             bRefresh = true;
         }
 
@@ -406,8 +416,8 @@ void CMainWnd::doWork()
 
         // 处理输入
         float fFocus135 = 15.0f;
-        vector<float> vk(5), vPitch;
-        vector<wstring> vPaths = doWorkForInput(fFocus135, vk, vPitch);
+        vector<float> vk(5), vPitch, vYaw;
+        vector<wstring> vPaths = doWorkForInput(fFocus135, vk, vPitch, vYaw);
 
         // 装载图像
         m_rx6k.LoadImages(convert(vPaths));
@@ -415,6 +425,7 @@ void CMainWnd::doWork()
         m_rx6k.SetFocus135(fFocus135);
         m_rx6k.SetFisheye(vk);
         m_rx6k.SetPitch(vPitch);
+        m_rx6k.SetYaw(vYaw);
 
         // 输出一次中间结果
         doWorkForOutput(true, false);
@@ -429,12 +440,13 @@ void CMainWnd::doWork()
     OutputDebugString(L"=== Thread ===> Exit\n");
 }
 
-vector<wstring> CMainWnd::doWorkForInput(float& f135, vector<float>& vk, vector<float>& vPitch)
+vector<wstring> CMainWnd::doWorkForInput(float& f135, vector<float>& vk, vector<float>& vPitch, vector<float>& vYaw)
 {
     vector<wstring> vPaths;
     EnterCriticalSection(&m_csRX6K);
     vPaths = m_vPaths;
     vPitch = m_vPitch;
+    vYaw = m_vYaw;
     f135 = m_fFocus135;
     vk.clear();
     for (auto i = m_vk.begin(); i != m_vk.end(); i++) {

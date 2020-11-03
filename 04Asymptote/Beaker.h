@@ -21,7 +21,8 @@ public:
 	std::unique_ptr<cv::Vec3b> LookupPixel(float fTheta, int x, int y) const;
 
 	// 设定方位角(弧度,N=0 E=Pi/2)
-	void SetAzimuth(float fAzimuth) { m_spatial.SetAzimuth(fAzimuth); };
+	void SetAzimuth(float fAzimuth) { m_spatial.SetAzimuth(fAzimuth); }
+	void SetYaw(float fYaw) { m_spatial.SetYaw(fYaw); }
 	// 设定俯仰角(弧度,上正下负)
 	void SetPitch(float fPitch) { m_spatial.SetPitch(fPitch); }
 	// 设定光学镜头

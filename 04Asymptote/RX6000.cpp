@@ -65,6 +65,15 @@ void RX6000::SetPitch(const std::vector<float>& vPitch)
 	}
 }
 
+void RX6000::SetYaw(const std::vector<float>& vYaw)
+{
+	for (int i = 0; i < m_vuptrBeakers.size(); i++) {
+		if (i < vYaw.size()) {
+			m_vuptrBeakers[i]->SetYaw(vYaw[i]);
+		}
+	}
+}
+
 void RX6000::Compute()
 {
 	if (m_vuptrBeakers.size() > 0) {
