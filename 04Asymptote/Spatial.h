@@ -18,6 +18,7 @@ public:
 	void SetAzimuth(float fAzimuth) { m_fAzimuth = fAzimuth; }
 	void SetYaw(float fYaw) { m_fYaw = fYaw; }
 	void SetPitch(float fPitch) { m_fPitch = fPitch; }
+	float GetPitch() const { return m_fPitch; }
 
 	SpatialDiff operator-(const Spatial& right);
 

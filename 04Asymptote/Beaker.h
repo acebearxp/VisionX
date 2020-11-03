@@ -25,6 +25,7 @@ public:
 	void SetYaw(float fYaw) { m_spatial.SetYaw(fYaw); }
 	// 设定俯仰角(弧度,上正下负)
 	void SetPitch(float fPitch) { m_spatial.SetPitch(fPitch); }
+	float GetPitch() const { return m_spatial.GetPitch(); }
 	// 设定光学镜头
 	void SetOptica(std::unique_ptr<Optica>&& uptrOptica);
 	// 设定焦距
@@ -47,5 +48,8 @@ private:
 
 	std::string m_strPath; // 图像路径
 	cv::Mat m_image; // 图像
+
+	// 梯形校正
+	void trapezoidAdjust(int&x, int y, int width, int height, float fPitch);
 };
 

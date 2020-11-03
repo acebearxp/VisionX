@@ -65,7 +65,7 @@ private:
     // 水平偏角
     std::vector<float> m_vYaw = { 0.0f, 0.0f, 0.0f, 0.0f };
     // 俯仰角
-    std::vector<float> m_vPitch = { 0.0f, 0.0f, 0.0f, 0.0f };
+    std::vector<float> m_vPitch = { -0.47f, -0.3f, 0.0f, 0.0f };
     // 系数调节步长
     float m_fStep = 0.1f;
     // 输出的图像

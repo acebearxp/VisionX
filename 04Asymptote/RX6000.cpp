@@ -28,8 +28,8 @@ void RX6000::LoadImages(const std::vector<std::string> vPaths)
 		// auto uptrOptica = unique_ptr<Optica>(new Optica(15.0f));
 		// auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeTanHalf(15.0f));
 		// auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeArea(15.0f));
-		// auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeSin(15.0f));
-		auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeTheta(15.0f));
+		auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeSin(15.0f));
+		// auto uptrOptica = unique_ptr<Optica>(new OpticaFisheyeTheta(15.0f));
 		uptrBeaker->SetOptica(move(uptrOptica));
 
 		uptrBeaker->SetAzimuth(fStepAzimuth * i);
@@ -83,7 +83,6 @@ void RX6000::Compute()
 		m_uptrOutputBeaker->SetAzimuth(3.14f/4); // ±±Æ«¶«
 		m_uptrOutputBeaker->SetOptica(unique_ptr<Optica>(new Optica(15.0f)));
 
-
 		RECT rc;
 		rc.left = 0, rc.right = image.cols;
 		rc.top = 0, rc.bottom = image.rows;
@@ -91,6 +90,7 @@ void RX6000::Compute()
 		RECT rcLeft = rc;
 		rcLeft.right = rc.right / 2;
 		m_uptrOutputBeaker->OpticalTransfer(*m_vuptrBeakers[0].get(), rcLeft);
+		// return;
 	    // ÓÒ°ë·ù
 		RECT rcRight = rc;
 		rcRight.left = rc.right / 2;

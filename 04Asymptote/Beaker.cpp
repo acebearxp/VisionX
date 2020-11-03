@@ -32,13 +32,19 @@ void Beaker::CopyImage(const Beaker& src)
 void Beaker::OpticalTransfer(const Beaker& src, const RECT& rc)
 {
 	// 逐点计算
-	for (int y = 0; y < m_image.rows; y++) {
-		for (int x = 0; x < m_image.cols; x++) {
+	for (int y = 0; y < m_image.rows; y++)
+	{
+		for (int x = 0; x < m_image.cols; x++)
+		{
 
-			if (x >= rc.left && x < rc.right && y >= rc.top && y < rc.bottom) {
-
+			if (x >= rc.left && x < rc.right && y >= rc.top && y < rc.bottom)
+			{
 				int x2, y2;
 				tie(x2, y2) = SpatialTransfer(x, y, src);
+				
+				// 梯形校正 
+				trapezoidAdjust(x2, y2, m_image.cols, m_image.rows, src.GetPitch());
+
 				float fTheta = m_uptrOptica->CalcTheta(x2, y2, m_image.cols, m_image.rows);
 
 				// 根据fTheta,x,y查找对应的像素
@@ -56,6 +62,21 @@ std::tuple<int, int> Beaker::SpatialTransfer(int x, int y, const Beaker& src)
 {	
 	auto delta = m_spatial - src.m_spatial;
 	return m_uptrOptica->SpatialTransfer(x, y, m_image.cols, m_image.rows, delta);
+}
+
+void Beaker::trapezoidAdjust(int& x, int y, int width, int height, float fPitch)
+{
+	// 梯形修正量和俯仰角相关
+	float fk = 1.0f + 3.0f * tanf(-fPitch);
+
+	// 中心点(以像素为单位)
+	const float fX0 = m_image.cols / 2.0f;
+	const float fY0 = m_image.rows / 2.0f;
+	float fU = x - fX0;
+	float fV = y - fY0;
+	float fU2 = fU * ((1.0f - fk) * fV / height);
+
+	x = static_cast<int>(fX0 + fU + fU2);
 }
 
 void Beaker::Load(int width, int height, const cv::Vec3b& color)
