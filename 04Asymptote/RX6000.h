@@ -14,6 +14,7 @@ public:
 	// 加载图像
 	void LoadImages(const std::vector<std::string> vPaths);
 	// 设定参数
+	void SetFocus135(float f135);
 	void SetFisheye(const std::vector<float>& vk);
 	// 计算输出
 	void Compute();

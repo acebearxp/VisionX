@@ -42,6 +42,13 @@ void RX6000::LoadImages(const std::vector<std::string> vPaths)
 	}
 }
 
+void RX6000::SetFocus135(float f135)
+{
+	for (auto i = m_vuptrBeakers.begin(); i != m_vuptrBeakers.end(); i++) {
+		(*i)->SetFocus135(f135);
+	}
+}
+
 void RX6000::SetFisheye(const std::vector<float>& vk)
 {
 	for (auto i = m_vuptrBeakers.begin(); i != m_vuptrBeakers.end(); i++) {

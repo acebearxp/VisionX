@@ -17,6 +17,8 @@ public:
 	// 计算空间变换后的坐标值
 	std::tuple<int,int> SpatialTransfer(int x, int y, int width, int height, const SpatialDiff& delta);
 
+	// 设定焦距
+	void SetFocus135(float f135) { m_f135 = f135; }
 	// 设定鱼眼镜头参数
 	virtual void SetFisheyeK(const std::vector<float>& vk) {}
 protected:

@@ -21,6 +21,7 @@ protected:
     BOOL OnEraseBkgnd(HWND hwnd, HDC hdc);
     void OnSize(HWND hwnd, UINT state, int cx, int cy);
     void OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify) override;
+    void OnKey(HWND hwnd, UINT vk, BOOL fDown, int cRepeat, UINT flags);
 
     void OnGetMinMaxInfo(HWND hwnd, LPMINMAXINFO lpMinMaxInfo);
 private:
@@ -32,6 +33,10 @@ private:
     HBITMAP m_hBmpMem;
     std::unique_ptr<Gdiplus::SolidBrush> m_uptrBrushBK;
     std::unique_ptr<Gdiplus::Pen> m_uptrPenGray;
+    std::unique_ptr<Gdiplus::Pen> m_uptrPenCrimson;
+    std::unique_ptr<Gdiplus::Pen> m_uptrPenOrange;
+    std::unique_ptr<Gdiplus::Font> m_uptrFontSong;
+    std::unique_ptr<Gdiplus::SolidBrush> m_uptrBrushText;
 
     // 计算默认窗口位置
     RECT calcDefaultWindowRect();
@@ -39,8 +44,8 @@ private:
     void pickImages();
     // 关闭图像
     void clearImages();
-    // 计算图像绘制区域
-    void calcRectForImage(Gdiplus::Rect& rc);
+    // 绘制鱼眼theta曲线
+    void drawCurve(Gdiplus::Graphics& g, const Gdiplus::Rect& rc);
 private:
     // 工作信号
     HANDLE m_evWakeUp;
@@ -55,6 +60,10 @@ private:
     std::vector<std::wstring> m_vPaths;
     // 鱼眼系数
     std::vector<float> m_vk = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+    // 135等效焦距(mm)
+    float m_fFocus135 = 15.0f;
+    // 系数调节步长
+    float m_fStep = 0.1f;
     // 输出的图像
     std::unique_ptr<CVBitmap> m_uptrOutputBitmap;
     // 输入的图像或中间结果
@@ -65,7 +74,7 @@ private:
 
     // 后台任务
     void doWork();
-    std::vector<std::wstring> doWorkForInput(std::vector<float>& vk);
+    std::vector<std::wstring> doWorkForInput(float& f135, std::vector<float>& vk);
     void doWorkForOutput(bool bUpdateMiddle, bool bUpdateFinal);
 private:
     static const wchar_t c_wszClsName[];

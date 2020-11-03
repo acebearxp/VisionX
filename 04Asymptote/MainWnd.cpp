@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "MainWnd.h"
+#include "OpticaFisheyeSin.h"
+#include "OpticaFisheyeTheta.h"
 
 using namespace std;
 
@@ -56,6 +58,7 @@ LRESULT CMainWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
         HANDLE_MSG(hWnd, WM_ERASEBKGND, OnEraseBkgnd);
         HANDLE_MSG(hWnd, WM_SIZE, OnSize);
         HANDLE_MSG(hWnd, WM_GETMINMAXINFO, OnGetMinMaxInfo);
+        HANDLE_MSG(hWnd, WM_KEYUP, OnKey);
     case WM_USER:
         InvalidateRect(m_hwnd, nullptr, FALSE);
         lRet = 0L;
@@ -79,6 +82,10 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 
     m_uptrBrushBK = unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::WhiteSmoke));
     m_uptrPenGray = unique_ptr<Gdiplus::Pen>(new Gdiplus::Pen(Gdiplus::Color::Gray));
+    m_uptrPenCrimson = unique_ptr<Gdiplus::Pen>(new Gdiplus::Pen(Gdiplus::Color::Crimson));
+    m_uptrPenOrange = unique_ptr<Gdiplus::Pen>(new Gdiplus::Pen(Gdiplus::Color::OrangeRed));
+    m_uptrFontSong = unique_ptr<Gdiplus::Font>(new Gdiplus::Font(&Gdiplus::FontFamily(L"宋体"), 9.0));
+    m_uptrBrushText = unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::Crimson));
 
     // 启动工作线程
     m_evWakeUp = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -125,6 +132,10 @@ void CMainWnd::OnPaint(HWND hwnd)
         g.DrawImage(&bmp, rcBmp);
     }
 
+    // 曲线
+    Gdiplus::Rect rcCurve(rc.left, rc.top, rc.right - rc.left, nYSeparator - rc.top);
+    drawCurve(g, rcCurve);
+
     // bottom for each input image
     int count = static_cast<int>(m_vuptrBitmaps.size());
     if (count > 0) {
@@ -138,6 +149,17 @@ void CMainWnd::OnPaint(HWND hwnd)
         }
     }
     LeaveCriticalSection(&m_csRX6K);
+
+    // 参数
+    const float fLineHeight = m_uptrFontSong->GetHeight(&g);
+    wchar_t buf[1024];
+    swprintf_s(buf, L"%5s: %3.3f,%3.3f,%3.3f,%3.3f,%3.3f", L"k", m_vk[0], m_vk[1], m_vk[2], m_vk[3], m_vk[4]);
+    g.DrawString(buf, -1, m_uptrFontSong.get(), Gdiplus::PointF(0.0f, 0.0f), m_uptrBrushText.get());
+    swprintf_s(buf, L"%5s: %3.3f", L"focus", m_fFocus135);
+    g.DrawString(buf, -1, m_uptrFontSong.get(), Gdiplus::PointF(0.0f, fLineHeight), m_uptrBrushText.get());
+    swprintf_s(buf, L"%5s: %3.3f", L"step", m_fStep);
+    g.DrawString(buf, -1, m_uptrFontSong.get(), Gdiplus::PointF(0.0f, fLineHeight*2), m_uptrBrushText.get());
+
 
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(hwnd, &ps);
@@ -174,6 +196,58 @@ void CMainWnd::OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
     default:
         CXWnd::OnCommand(hwnd, id, hwndCtl, codeNotify);
         break;
+    }
+}
+
+void CMainWnd::OnKey(HWND hwnd, UINT vk, BOOL fDown, int cRepeat, UINT flags)
+{
+    bool bRefresh = false;
+
+    // step
+    SHORT shift = GetKeyState(VK_SHIFT);
+    float fStep = m_fStep;
+    if (shift & 0x8000) {
+        fStep = -fStep; // 按下shift向负值调整
+    }
+
+    EnterCriticalSection(&m_csRX6K);
+    {
+        if (vk >= L'0' && vk < L'5') {
+            m_vk[vk - L'0'] += fStep;
+            bRefresh = true;
+        }
+
+        if (vk == L'F') {
+            m_fFocus135 += fStep;
+            bRefresh = true;
+        }
+
+        static int s_nRatio = 1;
+        if (vk == VK_OEM_PLUS || vk == VK_OEM_MINUS) {
+            if (vk == VK_OEM_PLUS) s_nRatio++;
+            else s_nRatio--;
+
+            if (s_nRatio > 3) s_nRatio = 3;
+            else if (s_nRatio < 0) s_nRatio = 0;
+
+            m_fStep = pow(0.1f, s_nRatio);
+            bRefresh = true;
+        }
+
+        if (vk == L'R') {
+            // reset
+            m_fFocus135 = 15.0f;
+            m_vk = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+            m_fStep = 0.1f;
+            
+            bRefresh = true;
+        }
+    }
+    LeaveCriticalSection(&m_csRX6K);
+
+    if (bRefresh) {
+        InvalidateRect(m_hwnd, nullptr, FALSE);
+        SetEvent(m_evWakeUp);
     }
 }
 
@@ -276,6 +350,43 @@ void CMainWnd::clearImages()
     SetEvent(m_evWakeUp);
 }
 
+void CMainWnd::drawCurve(Gdiplus::Graphics& g, const Gdiplus::Rect& rc)
+{
+    int count = 500; // 绘点数目
+
+    OpticaFisheyeSin fisheyeSin(36.0f);
+    OpticaFisheyeTheta fisheyeTheta(36.0f);
+    fisheyeTheta.SetFisheyeK(m_vk);
+    
+    Gdiplus::PointF* pPoints = reinterpret_cast<Gdiplus::PointF*>(malloc(sizeof(Gdiplus::PointF) * count));
+    Gdiplus::PointF* pPoints2 = reinterpret_cast<Gdiplus::PointF*>(malloc(sizeof(Gdiplus::PointF) * count));
+    Gdiplus::PointF* pPoints3 = reinterpret_cast<Gdiplus::PointF*>(malloc(sizeof(Gdiplus::PointF) * count));
+
+    for (int i = 0; i < count; i++) {
+        float fX = rc.X + 1.0f * rc.Width * i / count;
+        float theta = static_cast<float>(M_PI_2 * i / count);
+
+        pPoints[i].X = fX;
+        float fY = (rc.Height / 2) * tanf(theta);
+        pPoints[i].Y = rc.Y + rc.Height - fY;
+
+        pPoints2[i].X = fX;
+        float fY2 = fisheyeSin.CalcRFromTheta(theta, rc.Height/2);
+        pPoints2[i].Y = rc.Y + rc.Height - fY2;
+
+        pPoints3[i].X = fX;
+        float fY3 = fisheyeTheta.CalcRFromTheta(theta, rc.Height/2);
+        pPoints3[i].Y = rc.Y + rc.Height - fY3;
+    }
+    g.DrawCurve(m_uptrPenCrimson.get(), pPoints, count);
+    g.DrawCurve(m_uptrPenCrimson.get(), pPoints2, count);
+    g.DrawCurve(m_uptrPenOrange.get(), pPoints3, count);
+
+    free(pPoints);
+    free(pPoints2);
+    free(pPoints3);
+}
+
 void CMainWnd::doWork()
 {
 
@@ -284,12 +395,14 @@ void CMainWnd::doWork()
         OutputDebugString(L"=== Thread ===> Working...\n");
 
         // 处理输入
+        float fFocus135 = 15.0f;
         vector<float> vk(5);
-        vector<wstring> vPaths = doWorkForInput(vk);
+        vector<wstring> vPaths = doWorkForInput(fFocus135, vk);
 
         // 装载图像
         m_rx6k.LoadImages(convert(vPaths));
         // 设定参数
+        m_rx6k.SetFocus135(fFocus135);
         m_rx6k.SetFisheye(vk);
 
         // 输出一次中间结果
@@ -305,11 +418,12 @@ void CMainWnd::doWork()
     OutputDebugString(L"=== Thread ===> Exit\n");
 }
 
-vector<wstring> CMainWnd::doWorkForInput(std::vector<float>& vk)
+vector<wstring> CMainWnd::doWorkForInput(float& f135, std::vector<float>& vk)
 {
     vector<wstring> vPaths;
     EnterCriticalSection(&m_csRX6K);
     vPaths = m_vPaths;
+    f135 = m_fFocus135;
     vk.clear();
     for (auto i = m_vk.begin(); i != m_vk.end(); i++) {
         vk.push_back(*i);
