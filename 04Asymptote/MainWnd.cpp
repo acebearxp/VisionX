@@ -153,12 +153,14 @@ void CMainWnd::OnPaint(HWND hwnd)
     // 参数
     const float fLineHeight = m_uptrFontSong->GetHeight(&g);
     wchar_t buf[1024];
-    swprintf_s(buf, L"%5s: %3.3f,%3.3f,%3.3f,%3.3f,%3.3f", L"k", m_vk[0], m_vk[1], m_vk[2], m_vk[3], m_vk[4]);
+    swprintf_s(buf, L"%5s: %3.3f, %3.3f, %3.3f, %3.3f, %3.3f", L"k", m_vk[0], m_vk[1], m_vk[2], m_vk[3], m_vk[4]);
     g.DrawString(buf, -1, m_uptrFontSong.get(), Gdiplus::PointF(0.0f, 0.0f), m_uptrBrushText.get());
     swprintf_s(buf, L"%5s: %3.3f", L"focus", m_fFocus135);
     g.DrawString(buf, -1, m_uptrFontSong.get(), Gdiplus::PointF(0.0f, fLineHeight), m_uptrBrushText.get());
     swprintf_s(buf, L"%5s: %3.3f", L"step", m_fStep);
     g.DrawString(buf, -1, m_uptrFontSong.get(), Gdiplus::PointF(0.0f, fLineHeight*2), m_uptrBrushText.get());
+    swprintf_s(buf, L"%5s: %3.3f, %3.3f", L"pitch", m_vPitch[0], m_vPitch[1]);
+    g.DrawString(buf, -1, m_uptrFontSong.get(), Gdiplus::PointF(0.0f, fLineHeight * 3), m_uptrBrushText.get());
 
 
     PAINTSTRUCT ps;
@@ -219,6 +221,14 @@ void CMainWnd::OnKey(HWND hwnd, UINT vk, BOOL fDown, int cRepeat, UINT flags)
 
         if (vk == L'F') {
             m_fFocus135 += fStep;
+            bRefresh = true;
+        }
+
+        if (vk == L'W' || vk == L'S' || vk == L'I' || vk == L'K') {
+            if (vk == L'W') m_vPitch[0] += m_fStep;
+            else if (vk == L'S') m_vPitch[0] -= m_fStep;
+            else if (vk == L'I') m_vPitch[1] += m_fStep;
+            else if (vk == L'K') m_vPitch[1] -= m_fStep;
             bRefresh = true;
         }
 
@@ -396,14 +406,15 @@ void CMainWnd::doWork()
 
         // 处理输入
         float fFocus135 = 15.0f;
-        vector<float> vk(5);
-        vector<wstring> vPaths = doWorkForInput(fFocus135, vk);
+        vector<float> vk(5), vPitch;
+        vector<wstring> vPaths = doWorkForInput(fFocus135, vk, vPitch);
 
         // 装载图像
         m_rx6k.LoadImages(convert(vPaths));
         // 设定参数
         m_rx6k.SetFocus135(fFocus135);
         m_rx6k.SetFisheye(vk);
+        m_rx6k.SetPitch(vPitch);
 
         // 输出一次中间结果
         doWorkForOutput(true, false);
@@ -418,11 +429,12 @@ void CMainWnd::doWork()
     OutputDebugString(L"=== Thread ===> Exit\n");
 }
 
-vector<wstring> CMainWnd::doWorkForInput(float& f135, std::vector<float>& vk)
+vector<wstring> CMainWnd::doWorkForInput(float& f135, vector<float>& vk, vector<float>& vPitch)
 {
     vector<wstring> vPaths;
     EnterCriticalSection(&m_csRX6K);
     vPaths = m_vPaths;
+    vPitch = m_vPitch;
     f135 = m_fFocus135;
     vk.clear();
     for (auto i = m_vk.begin(); i != m_vk.end(); i++) {

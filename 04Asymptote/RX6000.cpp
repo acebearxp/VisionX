@@ -56,6 +56,15 @@ void RX6000::SetFisheye(const std::vector<float>& vk)
 	}
 }
 
+void RX6000::SetPitch(const std::vector<float>& vPitch)
+{
+	for (int i = 0; i < m_vuptrBeakers.size(); i++) {
+		if (i < vPitch.size()) {
+			m_vuptrBeakers[i]->SetPitch(vPitch[i]);
+		}
+	}
+}
+
 void RX6000::Compute()
 {
 	if (m_vuptrBeakers.size() > 0) {
