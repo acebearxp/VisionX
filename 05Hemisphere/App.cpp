@@ -38,11 +38,16 @@ int CApp::Run(PWSTR pCmdLine, int nCmdShow)
 {
     HACCEL hAccel = LoadAccelerators(m_hInstance, MAKEINTRESOURCE(IDR_ACCELERATOR));
 
-    MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0)) {
-        if (!TranslateAccelerator(*m_uptrMainWnd, hAccel, &msg)) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+    MSG msg = { 0 };
+    while (msg.message != WM_QUIT) {
+        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+            if (!TranslateAccelerator(*m_uptrMainWnd, hAccel, &msg)) {
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+        }
+        else {
+            m_uptrMainWnd->Render();
         }
     }
 

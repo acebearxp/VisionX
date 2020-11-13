@@ -50,13 +50,63 @@ BOOL CMainWnd::Create(HINSTANCE hInstance)
     return TRUE;
 }
 
+void CMainWnd::Render()
+{
+    // clear
+    m_spImCtx->ClearRenderTargetView(m_spRTV.Get(), Colors::Black);
+    m_spImCtx->ClearDepthStencilView(m_spZView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+    // set render target
+    m_spImCtx->OMSetRenderTargets(1, m_spRTV.GetAddressOf(), m_spZView.Get());
+
+    // drawing
+    m_cb.mWorld = XMMatrixRotationY((GetTickCount64() - m_u64Begin) / 1000.0f);
+
+    m_spImCtx->IASetInputLayout(m_spIL.Get());
+    m_spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    // 设定顶点数据
+    UINT stride = m_uptrCube->GetStride();
+    UINT offset = 0;
+    auto spVertexBuffer = m_uptrCube->GetVertexes();
+    m_spImCtx->IASetVertexBuffers(0, 1, spVertexBuffer.GetAddressOf(), &stride, &offset);
+    m_spImCtx->IASetIndexBuffer(m_uptrCube->GetIndex().Get(), DXGI_FORMAT_R32_UINT, 0);
+
+    ConstantBuffer cb1;
+    cb1.mWorld = XMMatrixTranspose(m_cb.mWorld);
+    cb1.mView = XMMatrixTranspose(m_cb.mView);
+    cb1.mProjection = XMMatrixTranspose(m_cb.mProjection);
+    cb1.vLightDir = m_cb.vLightDir;
+    cb1.vLightColor = m_cb.vLightColor;
+    m_spImCtx->UpdateSubresource(m_spConstant.Get(), 0, nullptr, &cb1, 0, 0);
+    m_spImCtx->VSSetConstantBuffers(0, 1, m_spConstant.GetAddressOf());
+    m_spImCtx->VSSetShader(m_spVS.Get(), NULL, 0);
+    m_spImCtx->PSSetConstantBuffers(0, 1, m_spConstant.GetAddressOf());
+    m_spImCtx->PSSetShader(m_spPS.Get(), NULL, 0);
+    m_spImCtx->DrawIndexed(m_uptrCube->GetVertexesCount(), 0, 0);
+
+    ConstantBuffer cb2;
+    cb2.mWorld = XMMatrixTranspose(m_cb.mWorld
+        * XMMatrixScaling(0.3f, 0.3f, 0.3f)
+        * XMMatrixRotationX((GetTickCount64() - m_u64Begin) / 1000.0f)
+        * XMMatrixTranslation(+4.0f, 0.0f, 0.0f)
+        * XMMatrixRotationY((GetTickCount64() - m_u64Begin) / -600.0f));
+    cb2.mView = XMMatrixTranspose(m_cb.mView);
+    cb2.mProjection = XMMatrixTranspose(m_cb.mProjection);
+    cb2.vLightDir = m_cb.vLightDir;
+    cb2.vLightColor = m_cb.vLightColor;
+    m_spImCtx->UpdateSubresource(m_spConstant.Get(), 0, nullptr, &cb2, 0, 0);
+    m_spImCtx->DrawIndexed(m_uptrCube->GetVertexesCount(), 0, 0);
+
+    HRESULT hr = m_spSwapChain->Present(1, 0);
+}
+
 LRESULT CMainWnd::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     LRESULT lRet;
     switch (uMsg) {
         HANDLE_MSG(hWnd, WM_ERASEBKGND, OnEraseBkgnd);
         HANDLE_MSG(hWnd, WM_SIZE, OnSize);
-        HANDLE_MSG(hWnd, WM_TIMER, OnTimer);
         HANDLE_MSG(hWnd, WM_GETMINMAXINFO, OnGetMinMaxInfo);
     default:
         lRet = CXWnd::WndProc(hWnd, uMsg, wParam, lParam);
@@ -96,12 +146,12 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     ZeroMemory(&desc, sizeof(DXGI_SWAP_CHAIN_DESC1));
     desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     desc.Stereo = FALSE;
-    desc.SampleDesc.Count = 4;
-    desc.SampleDesc.Quality = D3D11_STANDARD_MULTISAMPLE_PATTERN;
+    desc.SampleDesc.Count = 1;
+    desc.SampleDesc.Quality = 0;
     desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    desc.BufferCount = 1;
+    desc.BufferCount = 2;
     desc.Scaling = DXGI_SCALING_STRETCH;
-    desc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+    desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
     hr = spFactory->CreateSwapChainForHwnd(m_spD3D11.Get(), hwnd, &desc, NULL, NULL, &m_spSwapChain);
     if (FAILED(hr)) {
@@ -134,19 +184,10 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
         { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA , 0 }
     };
     hr = m_spD3D11->CreateInputLayout(layout, sizeof(layout) / sizeof(D3D11_INPUT_ELEMENT_DESC), m_uptrVS.get(), m_dwVS, &m_spIL);
-    m_spImCtx->IASetInputLayout(m_spIL.Get());
 
     // 几何体
     m_uptrCube = unique_ptr<CCube>(new CCube());
     m_uptrCube->Init(m_spD3D11);
-
-    // 设定顶点数据
-    UINT stride = m_uptrCube->GetStride();
-    UINT offset = 0;
-    auto spVertexBuffer = m_uptrCube->GetVertexes();
-    m_spImCtx->IASetVertexBuffers(0, 1, spVertexBuffer.GetAddressOf(), &stride, &offset);
-    m_spImCtx->IASetIndexBuffer(m_uptrCube->GetIndex().Get(), DXGI_FORMAT_R32_UINT, 0);
-    m_spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // 3D空间
     D3D11_BUFFER_DESC descWorld;
@@ -173,7 +214,6 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 
     // 开始时间标定
     m_u64Begin = GetTickCount64();
-    SetTimer(hwnd, 1, 33, NULL);
 
     return bRet;
 }
@@ -188,40 +228,7 @@ void CMainWnd::OnDestroy(HWND hwnd)
 void CMainWnd::OnPaint(HWND hwnd)
 {
     CXWnd::OnPaint(hwnd);
-
-    // clear
-    m_spImCtx->ClearRenderTargetView(m_spRTV.Get(), Colors::Black);
-    m_spImCtx->ClearDepthStencilView(m_spZView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
-
-    // draw
-    ConstantBuffer cb1;
-    cb1.mWorld = XMMatrixTranspose(m_cb.mWorld);
-    cb1.mView = XMMatrixTranspose(m_cb.mView);
-    cb1.mProjection = XMMatrixTranspose(m_cb.mProjection);
-    cb1.vLightDir = m_cb.vLightDir;
-    cb1.vLightColor = m_cb.vLightColor;
-    m_spImCtx->UpdateSubresource(m_spConstant.Get(), 0, nullptr, &cb1, 0, 0);
-    ID3D11Buffer* pConstant = m_spConstant.Get();
-    m_spImCtx->VSSetConstantBuffers(0, 1, &pConstant);
-    m_spImCtx->VSSetShader(m_spVS.Get(), NULL, 0);
-    m_spImCtx->PSSetConstantBuffers(0, 1, &pConstant);
-    m_spImCtx->PSSetShader(m_spPS.Get(), NULL, 0);
-    m_spImCtx->DrawIndexed(m_uptrCube->GetVertexesCount(), 0, 0);
-
-    ConstantBuffer cb2;
-    cb2.mWorld = XMMatrixTranspose(m_cb.mWorld
-        * XMMatrixScaling(0.3f, 0.3f, 0.3f)
-        * XMMatrixRotationX((GetTickCount64() - m_u64Begin) / 1000.0f)
-        * XMMatrixTranslation(+4.0f, 0.0f, 0.0f)
-        * XMMatrixRotationY((GetTickCount64() - m_u64Begin) / -600.0f));
-    cb2.mView = XMMatrixTranspose(m_cb.mView);
-    cb2.mProjection = XMMatrixTranspose(m_cb.mProjection);
-    cb2.vLightDir = m_cb.vLightDir;
-    cb2.vLightColor = m_cb.vLightColor;
-    m_spImCtx->UpdateSubresource(m_spConstant.Get(), 0, nullptr, &cb2, 0, 0);
-    m_spImCtx->DrawIndexed(m_uptrCube->GetVertexesCount(), 0, 0);
-
-    HRESULT hr = m_spSwapChain->Present(1, 0);
+    Render();
 }
 
 BOOL CMainWnd::OnEraseBkgnd(HWND hwnd, HDC hdc)
@@ -241,7 +248,7 @@ void CMainWnd::OnSize(HWND hwnd, UINT state, int cx, int cy)
     if (cy == 0) cy = 1;
 
     // resize
-    HRESULT hr = m_spSwapChain->ResizeBuffers(1, cx, cy, DXGI_FORMAT_UNKNOWN, 0);
+    HRESULT hr = m_spSwapChain->ResizeBuffers(0, cx, cy, DXGI_FORMAT_UNKNOWN, 0);
     // 设定渲染目标
     ComPtr<ID3D11Texture2D> spBackBuffer;
     hr = m_spSwapChain->GetBuffer(0, IID_PPV_ARGS(&spBackBuffer));
@@ -255,8 +262,8 @@ void CMainWnd::OnSize(HWND hwnd, UINT state, int cx, int cy)
     descZ.MipLevels = 1;
     descZ.ArraySize = 1;
     descZ.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-    descZ.SampleDesc.Count = 4;
-    descZ.SampleDesc.Quality = D3D11_STANDARD_MULTISAMPLE_PATTERN;
+    descZ.SampleDesc.Count = 1;
+    descZ.SampleDesc.Quality = 0;
     descZ.Usage = D3D11_USAGE_DEFAULT;
     descZ.BindFlags = D3D11_BIND_DEPTH_STENCIL;
     hr = m_spD3D11->CreateTexture2D(&descZ, NULL, &m_spZ);
@@ -266,8 +273,6 @@ void CMainWnd::OnSize(HWND hwnd, UINT state, int cx, int cy)
     descZView.Format = descZ.Format;
     descZView.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DMS;
     hr = m_spD3D11->CreateDepthStencilView(m_spZ.Get(), &descZView, &m_spZView);
-
-    m_spImCtx->OMSetRenderTargets(1, m_spRTV.GetAddressOf(), m_spZView.Get());
 
     // 设定可见区域
     D3D11_VIEWPORT viewPort;
@@ -296,12 +301,6 @@ void CMainWnd::OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
         CXWnd::OnCommand(hwnd, id, hwndCtl, codeNotify);
         break;
     }
-}
-
-void CMainWnd::OnTimer(HWND hwnd, UINT id)
-{
-    m_cb.mWorld = XMMatrixRotationY((GetTickCount64() - m_u64Begin) / 1000.0f);
-    InvalidateRect(hwnd, NULL, TRUE);
 }
 
 void CMainWnd::OnGetMinMaxInfo(HWND hwnd, LPMINMAXINFO lpMinMaxInfo)

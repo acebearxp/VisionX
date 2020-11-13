@@ -21,6 +21,9 @@ public:
 
     ATOM Register(HINSTANCE hInstance) override;
     BOOL Create(HINSTANCE hInstance);
+
+    void Render();
+
 protected:
     LRESULT WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) override;
 
@@ -30,7 +33,6 @@ protected:
     BOOL OnEraseBkgnd(HWND hwnd, HDC hdc);
     void OnSize(HWND hwnd, UINT state, int cx, int cy);
     void OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify) override;
-    virtual void OnTimer(HWND hwnd, UINT id);
 
     void OnGetMinMaxInfo(HWND hwnd, LPMINMAXINFO lpMinMaxInfo);
 private:
