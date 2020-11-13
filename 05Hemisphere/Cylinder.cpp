@@ -11,7 +11,8 @@ Cylinder::Cylinder()
 
 HRESULT Cylinder::CreateD3DBuf(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev)
 {
-    Geometry::CreateD3DBuf(spD3D11Dev);
+    HRESULT hr = Geometry::CreateD3DBuf(spD3D11Dev);
+    if (FAILED(hr)) return hr;
 
     // 顶点缓冲区
     D3D11_BUFFER_DESC descVertex;
@@ -25,13 +26,13 @@ HRESULT Cylinder::CreateD3DBuf(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev)
     xinit.SysMemPitch = 0;
     xinit.SysMemSlicePitch = 0;
 
-    HRESULT hr = spD3D11Dev->CreateBuffer(&descVertex, &xinit, &m_spBottomVertexes);
+    hr = spD3D11Dev->CreateBuffer(&descVertex, &xinit, &m_spBottomVertexes);
     if (FAILED(hr)) return hr;
 
     // 索引缓冲区
     D3D11_BUFFER_DESC descCubeIndex;
     ZeroMemory(&descCubeIndex, sizeof(D3D11_BUFFER_DESC));
-    descCubeIndex.ByteWidth = sizeof(UINT) * m_vBottomIndexes.size();
+    descCubeIndex.ByteWidth = static_cast<UINT>(sizeof(UINT) * m_vBottomIndexes.size());
     descCubeIndex.BindFlags = D3D11_BIND_INDEX_BUFFER;
 
     xinit.pSysMem = m_vBottomIndexes.data();
@@ -52,6 +53,10 @@ void Cylinder::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx)
     UINT offset = 0;
     spImCtx->IASetVertexBuffers(0, 1, m_spBottomVertexes.GetAddressOf(), &stride, &offset);
     spImCtx->IASetIndexBuffer(m_spBottomIndexes.Get(), DXGI_FORMAT_R32_UINT, 0);
+
+    // shader
+    spImCtx->VSSetShader(m_spVS.Get(), NULL, 0);
+    spImCtx->PSSetShader(m_spPS.Get(), NULL, 0);
 
     spImCtx->DrawIndexed(static_cast<UINT>(m_vBottomIndexes.size()), 0, 0);
 }

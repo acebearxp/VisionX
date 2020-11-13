@@ -59,18 +59,8 @@ void CMainWnd::Render()
     // set render target
     m_spImCtx->OMSetRenderTargets(1, m_spRTV.GetAddressOf(), m_spZView.Get());
 
-    // drawing
-    m_cb.mWorld = XMMatrixRotationY((GetTickCount64() - m_u64Begin) / 1000.0f);
-
-    m_spImCtx->IASetInputLayout(m_spIL.Get());
-    m_spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-    // 设定顶点数据
-    UINT stride = m_uptrCube->GetStride();
-    UINT offset = 0;
-    auto spVertexBuffer = m_uptrCube->GetVertexes();
-    m_spImCtx->IASetVertexBuffers(0, 1, spVertexBuffer.GetAddressOf(), &stride, &offset);
-    m_spImCtx->IASetIndexBuffer(m_uptrCube->GetIndex().Get(), DXGI_FORMAT_R32_UINT, 0);
+    // rotate
+    m_cb.mWorld = XMMatrixRotationY((GetTickCount64() - m_u64Begin) / 2000.0f);
 
     ConstantBuffer cb1;
     cb1.mWorld = XMMatrixTranspose(m_cb.mWorld);
@@ -80,12 +70,14 @@ void CMainWnd::Render()
     cb1.vLightColor = m_cb.vLightColor;
     m_spImCtx->UpdateSubresource(m_spConstant.Get(), 0, nullptr, &cb1, 0, 0);
     m_spImCtx->VSSetConstantBuffers(0, 1, m_spConstant.GetAddressOf());
-    m_spImCtx->VSSetShader(m_spVS.Get(), NULL, 0);
     m_spImCtx->PSSetConstantBuffers(0, 1, m_spConstant.GetAddressOf());
-    m_spImCtx->PSSetShader(m_spPS.Get(), NULL, 0);
-    m_spImCtx->DrawIndexed(m_uptrCube->GetVertexesCount(), 0, 0);
-
     m_uptrCylinder->Draw(m_spImCtx);
+
+    cb1.mWorld = XMMatrixTranspose(XMMatrixMultiply(XMMatrixTranslation(0.0f, 1.0f, 0.0f), m_cb.mWorld));
+    m_spImCtx->UpdateSubresource(m_spConstant.Get(), 0, nullptr, &cb1, 0, 0);
+    m_spImCtx->VSSetConstantBuffers(0, 1, m_spConstant.GetAddressOf());
+    m_spImCtx->PSSetConstantBuffers(0, 1, m_spConstant.GetAddressOf());
+    m_uptrCube->Draw(m_spImCtx);
 
     HRESULT hr = m_spSwapChain->Present(1, 0);
 }
@@ -160,22 +152,8 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     hr = m_spD3D11->CreateRasterizerState(&descRS, &spRS);
     m_spImCtx->RSSetState(spRS.Get());
 
-    // GPU
-    hr = loadShader();
-    if (FAILED(hr)) {
-        MessageBox(hwnd, L"Create Shader Failed!", L"D3D11", MB_OK);
-        return FALSE;
-    }
-
-    // 数据流格式
-    D3D11_INPUT_ELEMENT_DESC layout[] = {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA , 0 }
-    };
-    hr = m_spD3D11->CreateInputLayout(layout, sizeof(layout) / sizeof(D3D11_INPUT_ELEMENT_DESC), m_uptrVS.get(), m_dwVS, &m_spIL);
-
     // 几何体
-    m_uptrCube = unique_ptr<CCube>(new CCube());
+    m_uptrCube = unique_ptr<Cube>(new Cube());
     m_uptrCube->CreateD3DBuf(m_spD3D11);
 
     m_uptrCylinder = unique_ptr<Cylinder>(new Cylinder());

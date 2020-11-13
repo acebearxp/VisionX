@@ -54,7 +54,7 @@ private:
     Microsoft::WRL::ComPtr<ID3D11PixelShader> m_spPS;
 
     // geometry
-    std::unique_ptr<CCube> m_uptrCube;
+    std::unique_ptr<Cube> m_uptrCube;
     std::unique_ptr<Cylinder> m_uptrCylinder;
     // constant buffer
     ConstantBuffer m_cb;

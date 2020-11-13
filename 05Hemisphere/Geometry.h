@@ -22,4 +22,6 @@ protected:
 
     // 加载shader
     virtual HRESULT loadShader(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev);
+    // create input layout
+    virtual HRESULT createInputLayout(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev);
 };

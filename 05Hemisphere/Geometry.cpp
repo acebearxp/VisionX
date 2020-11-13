@@ -6,17 +6,7 @@ using namespace Microsoft::WRL;
 
 HRESULT Geometry::CreateD3DBuf(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev)
 {
-    // shader
-    loadShader(spD3D11Dev);
-
-    // input layout
-    D3D11_INPUT_ELEMENT_DESC layout[] = {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA , 0 }
-    };
-    HRESULT hr = spD3D11Dev->CreateInputLayout(layout, sizeof(layout) / sizeof(D3D11_INPUT_ELEMENT_DESC), m_uptrVS.get(), m_dwVS, &m_spIL);
-
-    return S_OK;
+    return createInputLayout(spD3D11Dev);
 }
 
 HRESULT Geometry::loadShader(ComPtr<ID3D11Device>& spD3D11Dev)
@@ -48,4 +38,19 @@ HRESULT Geometry::loadShader(ComPtr<ID3D11Device>& spD3D11Dev)
     if (FAILED(hr)) return hr;
 
     return S_OK;
+}
+
+HRESULT Geometry::createInputLayout(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev)
+{
+    // shader
+    HRESULT hr = loadShader(spD3D11Dev);
+    if (FAILED(hr)) return hr;
+
+    // input layout
+    D3D11_INPUT_ELEMENT_DESC layout[] = {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA , 0 }
+    };
+    hr = spD3D11Dev->CreateInputLayout(layout, sizeof(layout) / sizeof(D3D11_INPUT_ELEMENT_DESC), m_uptrVS.get(), m_dwVS, &m_spIL);
+    return hr;
 }

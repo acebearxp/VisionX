@@ -2,21 +2,21 @@
 
 #include "geometry.h"
 
-class CCube
+class Cube : public Geometry
 {
 public:
-    CCube();
+    Cube();
 
-    HRESULT CreateD3DBuf(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11);
-    Microsoft::WRL::ComPtr<ID3D11Buffer>& GetVertexes() { return m_spVertex; }
-    Microsoft::WRL::ComPtr<ID3D11Buffer>& GetIndex() { return m_spCubeIndex; }
-    UINT GetStride() { return sizeof(ColorPoint); }
-    UINT GetVertexesCount() { return static_cast<UINT>(m_vIndexes.size()); }
+    HRESULT CreateD3DBuf(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev) override;
+    void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx) override;
 private:
     std::vector<ColorPoint> m_vVertexes;
     std::vector<UINT> m_vIndexes;
 
-    Microsoft::WRL::ComPtr<ID3D11Buffer> m_spVertex;
-    Microsoft::WRL::ComPtr<ID3D11Buffer> m_spCubeIndex;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_spVertexes;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_spIndexes;
+
+    // 初始化数据
+    void init();
 };
 
