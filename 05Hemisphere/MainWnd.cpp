@@ -85,18 +85,7 @@ void CMainWnd::Render()
     m_spImCtx->PSSetShader(m_spPS.Get(), NULL, 0);
     m_spImCtx->DrawIndexed(m_uptrCube->GetVertexesCount(), 0, 0);
 
-    ConstantBuffer cb2;
-    cb2.mWorld = XMMatrixTranspose(m_cb.mWorld
-        * XMMatrixScaling(0.3f, 0.3f, 0.3f)
-        * XMMatrixRotationX((GetTickCount64() - m_u64Begin) / 1000.0f)
-        * XMMatrixTranslation(+4.0f, 0.0f, 0.0f)
-        * XMMatrixRotationY((GetTickCount64() - m_u64Begin) / -600.0f));
-    cb2.mView = XMMatrixTranspose(m_cb.mView);
-    cb2.mProjection = XMMatrixTranspose(m_cb.mProjection);
-    cb2.vLightDir = m_cb.vLightDir;
-    cb2.vLightColor = m_cb.vLightColor;
-    m_spImCtx->UpdateSubresource(m_spConstant.Get(), 0, nullptr, &cb2, 0, 0);
-    m_spImCtx->DrawIndexed(m_uptrCube->GetVertexesCount(), 0, 0);
+    m_uptrCylinder->Draw(m_spImCtx);
 
     HRESULT hr = m_spSwapChain->Present(1, 0);
 }
@@ -187,7 +176,10 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 
     // 几何体
     m_uptrCube = unique_ptr<CCube>(new CCube());
-    m_uptrCube->Init(m_spD3D11);
+    m_uptrCube->CreateD3DBuf(m_spD3D11);
+
+    m_uptrCylinder = unique_ptr<Cylinder>(new Cylinder());
+    m_uptrCylinder->CreateD3DBuf(m_spD3D11);
 
     // 3D空间
     D3D11_BUFFER_DESC descWorld;
@@ -201,7 +193,7 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     m_cb.mWorld = XMMatrixIdentity();
 
     // 摄像机位
-    XMVECTOR Eye = XMVectorSet(3.0f, 8.0f, -15.0f, 0.0f);
+    XMVECTOR Eye = XMVectorSet(3.0f, 8.0f, -30.0f, 0.0f);
     XMVECTOR At = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
     XMVECTOR Up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
     m_cb.mView = XMMatrixLookAtLH(Eye, At, Up);

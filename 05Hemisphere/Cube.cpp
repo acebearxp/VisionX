@@ -20,7 +20,7 @@ CCube::CCube()
     };
 
     // 转换为一系列的三角形,立方体有6个面,每个面拆成2个三角形,三角形3个点,共计3*2*6=36个点
-    m_vCubeIndex = {
+    m_vIndexes = {
         3, 1, 0,
         2, 1, 3,
         0, 5, 4,
@@ -36,7 +36,7 @@ CCube::CCube()
     };
 }
 
-HRESULT CCube::Init(ComPtr<ID3D11Device>& spD3D11)
+HRESULT CCube::CreateD3DBuf(ComPtr<ID3D11Device>& spD3D11)
 {
     // 顶点缓冲区
     D3D11_BUFFER_DESC descVertex;
@@ -59,7 +59,7 @@ HRESULT CCube::Init(ComPtr<ID3D11Device>& spD3D11)
     descCubeIndex.ByteWidth = sizeof(UINT) * 36;
     descCubeIndex.BindFlags = D3D11_BIND_INDEX_BUFFER;
 
-    xinit.pSysMem = m_vCubeIndex.data();
+    xinit.pSysMem = m_vIndexes.data();
 
     hr = spD3D11->CreateBuffer(&descCubeIndex, &xinit, &m_spCubeIndex);
     if (FAILED(hr)) return hr;

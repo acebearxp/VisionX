@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 #include "XWnd.h"
 #include "resource.h"
 #include "Cube.h"
+#include "Cylinder.h"
 
 struct ConstantBuffer
 {
@@ -54,6 +55,7 @@ private:
 
     // geometry
     std::unique_ptr<CCube> m_uptrCube;
+    std::unique_ptr<Cylinder> m_uptrCylinder;
     // constant buffer
     ConstantBuffer m_cb;
     // tick
