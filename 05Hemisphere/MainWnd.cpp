@@ -60,7 +60,9 @@ void CMainWnd::Render()
     m_spImCtx->OMSetRenderTargets(1, m_spRTV.GetAddressOf(), m_spZView.Get());
 
     // rotate
-    m_cb.mWorld = XMMatrixRotationY((GetTickCount64() - m_u64Begin) / 2000.0f);
+    // m_cb.mWorld = XMMatrixRotationY(0.0f);
+    m_cb.mWorld = XMMatrixRotationY((GetTickCount64() - m_u64Begin) / 3000.0f);
+    
 
     ConstantBuffer cb1;
     cb1.mWorld = XMMatrixTranspose(m_cb.mWorld);
@@ -144,7 +146,7 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     D3D11_RASTERIZER_DESC descRS;
     ZeroMemory(&descRS, sizeof(D3D11_RASTERIZER_DESC));
     descRS.FillMode = D3D11_FILL_WIREFRAME; // D3D11_FILL_SOLID
-    descRS.CullMode = D3D11_CULL_NONE;      // D3D11_CULL_BACK
+    descRS.CullMode = D3D11_CULL_BACK;      // D3D11_CULL_NONE
     descRS.DepthClipEnable = TRUE;
     descRS.MultisampleEnable = TRUE;
 
@@ -172,7 +174,9 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 
     // 摄像机位
     XMVECTOR Eye = XMVectorSet(3.0f, 8.0f, -30.0f, 0.0f);
-    XMVECTOR At = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+    // XMVECTOR Eye = XMVectorSet(0.0f, 8.0f, -10.0f, 0.0f);
+    // XMVECTOR Eye = XMVectorSet(30.0f, 30.0f, -80.0f, 0.0f);
+    XMVECTOR At = XMVectorSet(0.0f, 6.0f, 0.0f, 0.0f);
     XMVECTOR Up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
     m_cb.mView = XMMatrixLookAtLH(Eye, At, Up);
 
@@ -255,7 +259,7 @@ void CMainWnd::OnSize(HWND hwnd, UINT state, int cx, int cy)
     m_spImCtx->RSSetViewports(1, &viewPort);
 
     // 镜头
-    m_cb.mProjection = XMMatrixPerspectiveFovLH(XM_PI / 6.0f, viewPort.Width / viewPort.Height, 0.01f, 100.0f);
+    m_cb.mProjection = XMMatrixPerspectiveFovLH(XM_PI / 6.0f, viewPort.Width / viewPort.Height, 0.01f, 1000.0f);
 }
 
 void CMainWnd::OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)

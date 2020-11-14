@@ -23,6 +23,8 @@ private:
     // 侧面
     std::vector<ColorPoint> m_vSideVertexes;
     std::vector<UINT> m_vSideIndexes;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_spSideVertexes;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_spSideIndexes;
 
     // 初始化数据
     void init();
