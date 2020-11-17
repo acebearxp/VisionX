@@ -4,6 +4,8 @@ struct ColorPoint
 {
     DirectX::XMFLOAT4 Point;
     DirectX::XMFLOAT4 Color;
+    DirectX::XMFLOAT4 Normal;
+    DirectX::XMFLOAT2 Tex;
 };
 
 class Geometry

@@ -59,10 +59,9 @@ void CMainWnd::Render()
     // set render target
     m_spImCtx->OMSetRenderTargets(1, m_spRTV.GetAddressOf(), m_spZView.Get());
 
-    // rotate
+    // rotating
     // m_cb.mWorld = XMMatrixRotationY(0.0f);
     m_cb.mWorld = XMMatrixRotationY((GetTickCount64() - m_u64Begin) / 3000.0f);
-    
 
     ConstantBuffer cb1;
     cb1.mWorld = XMMatrixTranspose(m_cb.mWorld);

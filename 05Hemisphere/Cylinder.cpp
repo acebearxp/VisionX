@@ -84,17 +84,24 @@ void Cylinder::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx)
 
 void Cylinder::init()
 {
+    XMFLOAT4 xmf4Color = XMFLOAT4(0.8f, 0.6f, 0.0f, 1.0f);
     // center point of bottom
     m_vBottomVertexes.push_back({ XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) });
 
     float fy0 = 0.0f, fy1 = m_fHeight;
+    XMFLOAT4 xmf4Up(0.0f, 1.0f, 0.0f, 1.0f);
 	for (int i = 0; i <= m_nStepsArc; i++) {
 		float fTheta = 2.0f * XM_PI * i / m_nStepsArc;
-		float fx = m_fRadius * XMScalarSin(fTheta);
-		float fz = m_fRadius * XMScalarCos(fTheta);
-		m_vBottomVertexes.push_back({ XMFLOAT4(fx, 0.0f, fz, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) });
-        m_vSideVertexes.push_back({ XMFLOAT4(fx, fy0, fz, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) });
-        m_vSideVertexes.push_back({ XMFLOAT4(fx, fy1, fz, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) });
+        float fx1 = XMScalarSin(fTheta);
+        float fz1 = XMScalarCos(fTheta);;
+		float fx = m_fRadius * fx1;
+		float fz = m_fRadius * fz1;
+
+		m_vBottomVertexes.push_back({ XMFLOAT4(fx, 0.0f, fz, 1.0f), xmf4Color, xmf4Up });
+
+        XMFLOAT4 xmf4ToCenter(-fx1, 0.0f, -fz1, 1.0f); // 指向柱心
+        m_vSideVertexes.push_back({ XMFLOAT4(fx, fy0, fz, 1.0f), xmf4Color, xmf4ToCenter });
+        m_vSideVertexes.push_back({ XMFLOAT4(fx, fy1, fz, 1.0f), xmf4Color, xmf4ToCenter });
         if (i == 0) continue;
         // triangle list for bottom
         m_vBottomIndexes.push_back(0);

@@ -64,16 +64,17 @@ void Cube::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx)
 
 void Cube::init()
 {
+    XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.6f, 0.0f, 1.0f);
     // 一个立方体有8个顶点 POSITION, COLOR
     m_vVertexes = {
-        { XMFLOAT4(-1.0f,  1.0f, -1.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { XMFLOAT4(1.0f,  1.0f, -1.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { XMFLOAT4(1.0f,  1.0f,  1.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { XMFLOAT4(-1.0f,  1.0f,  1.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { XMFLOAT4(-1.0f, -1.0f, -1.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { XMFLOAT4(1.0f, -1.0f, -1.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { XMFLOAT4(1.0f, -1.0f,  1.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { XMFLOAT4(-1.0f, -1.0f,  1.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) }
+        { XMFLOAT4(-1.0f,  1.0f, -1.0f, 1.0f), xmf4Color },
+        { XMFLOAT4(1.0f ,  1.0f, -1.0f, 1.0f), xmf4Color },
+        { XMFLOAT4(1.0f ,  1.0f,  1.0f, 1.0f), xmf4Color },
+        { XMFLOAT4(-1.0f,  1.0f,  1.0f, 1.0f), xmf4Color },
+        { XMFLOAT4(-1.0f, -1.0f, -1.0f, 1.0f), xmf4Color },
+        { XMFLOAT4(1.0f , -1.0f, -1.0f, 1.0f), xmf4Color },
+        { XMFLOAT4(1.0f , -1.0f,  1.0f, 1.0f), xmf4Color },
+        { XMFLOAT4(-1.0f, -1.0f,  1.0f, 1.0f), xmf4Color }
     };
 
     // 转换为一系列的三角形,立方体有6个面,每个面拆成2个三角形,三角形3个点,共计3*2*6=36个点
