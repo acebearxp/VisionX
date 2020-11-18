@@ -37,6 +37,9 @@ private:
     Microsoft::WRL::ComPtr<ID3D11Texture2D> m_spZ;
     Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_spZView;
 
+    Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_spRSSolid;
+    Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_spRSWireframe;
+
     // geometry
     std::unique_ptr<Cube> m_uptrCube;
     std::unique_ptr<Cylinder> m_uptrCylinder;

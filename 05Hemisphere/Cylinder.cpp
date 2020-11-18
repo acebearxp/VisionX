@@ -55,7 +55,7 @@ HRESULT Cylinder::CreateD3DResources(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D
     hr = fnCreateD3DBuf(m_vSideVertices, m_vSideIndexes, m_spSideVertices, m_spSideIndexes);
     if (FAILED(hr)) return hr;
 
-    hr = loadTexture2D(spD3D11Dev, R"(D:/VisionX/01Hello/1.jpg)");
+    hr = loadTexture2D(spD3D11Dev, R"(D:/VisionX/01Hello/front.jpg)");
     if (FAILED(hr)) return hr;
 
     return S_OK;
@@ -76,36 +76,36 @@ void Cylinder::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const 
     spImCtx->VSSetConstantBuffers(0, 1, m_spConstBuf.GetAddressOf());
     spImCtx->PSSetConstantBuffers(0, 1, m_spConstBuf.GetAddressOf());
 
+    // input layout
     spImCtx->IASetInputLayout(m_spIL.Get());
 
+    // texture
+    spImCtx->PSSetSamplers(0, 1, m_spSamplerState.GetAddressOf());
+    spImCtx->PSSetShaderResources(0, 1, m_spSRV.GetAddressOf());
+
     // bottom
-    UINT stride = sizeof(ColorPoint);
-    UINT offset = 0;
+    const UINT stride = sizeof(ColorPoint);
+    const UINT offset = 0;
     spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
     spImCtx->IASetVertexBuffers(0, 1, m_spBottomVertices.GetAddressOf(), &stride, &offset);
     spImCtx->IASetIndexBuffer(m_spBottomIndexes.Get(), DXGI_FORMAT_R32_UINT, 0);
     spImCtx->DrawIndexed(static_cast<UINT>(m_vBottomIndexes.size()), 0, 0);
 
     // side
-    offset = 0;
     spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
     spImCtx->IASetVertexBuffers(0, 1, m_spSideVertices.GetAddressOf(), &stride, &offset);
     spImCtx->IASetIndexBuffer(m_spSideIndexes.Get(), DXGI_FORMAT_R32_UINT, 0);
     spImCtx->Draw(static_cast<UINT>(m_vSideVertices.size()), 0);
-
-    // texture
-    spImCtx->PSSetSamplers(0, 1, m_spSamplerState.GetAddressOf());
-    spImCtx->PSSetShaderResources(0, 1, m_spSRV.GetAddressOf());
 }
 
 void Cylinder::init()
 {
     XMFLOAT4 xmf4Color = XMFLOAT4(0.8f, 0.6f, 0.0f, 1.0f);
+    XMFLOAT4 xmf4Up(0.0f, 1.0f, 0.0f, 1.0f);
     // center point of bottom
-    m_vBottomVertices.push_back({ XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f) });
+    m_vBottomVertices.push_back({ XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.0f, 1.0f) });
 
     float fy0 = 0.0f, fy1 = m_fHeight;
-    XMFLOAT4 xmf4Up(0.0f, 1.0f, 0.0f, 1.0f);
 	for (int i = 0; i <= m_nStepsArc; i++) {
 		float fTheta = 2.0f * XM_PI * i / m_nStepsArc; // 方位角
         float fx1 = XMScalarSin(fTheta);
@@ -113,15 +113,16 @@ void Cylinder::init()
 		float fx = m_fRadius * fx1;
 		float fz = m_fRadius * fz1;
 
-        // clamp
-        float fU = (fTheta - XM_PIDIV4) / XM_PIDIV2;
-        
+        // clamp fThetaUV between (-Pi/4,+Pi/4]
+        float fThetaUV = fTheta;
+        while (fThetaUV > XM_PIDIV4) fThetaUV -= XM_PIDIV2;
+        float fU = (fThetaUV + XM_PIDIV4) / XM_PIDIV2;
 
-		m_vBottomVertices.push_back({ XMFLOAT4(fx, 0.0f, fz, 1.0f), xmf4Color, xmf4Up });
+		m_vBottomVertices.push_back({ XMFLOAT4(fx, 0.0f, fz, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.0f, 0.5f) });
 
         XMFLOAT4 xmf4ToCenter(-fx1, 0.0f, -fz1, 1.0f); // 指向柱心
-        m_vSideVertices.push_back({ XMFLOAT4(fx, fy0, fz, 1.0f), xmf4Color, xmf4ToCenter });
-        m_vSideVertices.push_back({ XMFLOAT4(fx, fy1, fz, 1.0f), xmf4Color, xmf4ToCenter });
+        m_vSideVertices.push_back({ XMFLOAT4(fx, fy0, fz, 1.0f), xmf4Color, xmf4ToCenter, XMFLOAT2(fU, (m_fHeight - fy0) / m_fHeight) });
+        m_vSideVertices.push_back({ XMFLOAT4(fx, fy1, fz, 1.0f), xmf4Color, xmf4ToCenter, XMFLOAT2(fU, (m_fHeight - fy1) / m_fHeight) });
         if (i == 0) continue;
         // triangle list for bottom
         m_vBottomIndexes.push_back(0);

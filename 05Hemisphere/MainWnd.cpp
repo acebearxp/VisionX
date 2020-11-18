@@ -62,7 +62,10 @@ void CMainWnd::Render()
     // rotating
     m_space.mWorld = XMMatrixRotationY((GetTickCount64() - m_u64Begin) / 3000.0f);
 
+    m_spImCtx->RSSetState(m_spRSSolid.Get());
     m_uptrCylinder->Draw(m_spImCtx, m_space);
+
+    m_spImCtx->RSSetState(m_spRSWireframe.Get());
     m_uptrCube->Draw(m_spImCtx, m_space);
 
     HRESULT hr = m_spSwapChain->Present(1, 0);
@@ -129,14 +132,14 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     // 光栅参数
     D3D11_RASTERIZER_DESC descRS;
     ZeroMemory(&descRS, sizeof(D3D11_RASTERIZER_DESC));
-    descRS.FillMode = D3D11_FILL_WIREFRAME; // D3D11_FILL_SOLID
-    descRS.CullMode = D3D11_CULL_BACK;      // D3D11_CULL_NONE
+    descRS.FillMode = D3D11_FILL_SOLID; // D3D11_FILL_SOLID | D3D11_FILL_WIREFRAME
+    descRS.CullMode = D3D11_CULL_BACK;      // D3D11_CULL_NONE  | D3D11_CULL_BACK
     descRS.DepthClipEnable = TRUE;
     descRS.MultisampleEnable = TRUE;
+    hr = m_spD3D11->CreateRasterizerState(&descRS, &m_spRSSolid);
 
-    ComPtr<ID3D11RasterizerState> spRS;
-    hr = m_spD3D11->CreateRasterizerState(&descRS, &spRS);
-    m_spImCtx->RSSetState(spRS.Get());
+    descRS.FillMode = D3D11_FILL_WIREFRAME;
+    hr = m_spD3D11->CreateRasterizerState(&descRS, &m_spRSWireframe);
 
     // 几何体
     m_uptrCube = unique_ptr<Cube>(new Cube());
