@@ -60,25 +60,10 @@ void CMainWnd::Render()
     m_spImCtx->OMSetRenderTargets(1, m_spRTV.GetAddressOf(), m_spZView.Get());
 
     // rotating
-    // m_cb.mWorld = XMMatrixRotationY(0.0f);
-    m_cb.mWorld = XMMatrixRotationY((GetTickCount64() - m_u64Begin) / 3000.0f);
+    m_space.mWorld = XMMatrixRotationY((GetTickCount64() - m_u64Begin) / 3000.0f);
 
-    ConstantBuffer cb1;
-    cb1.mWorld = XMMatrixTranspose(m_cb.mWorld);
-    cb1.mView = XMMatrixTranspose(m_cb.mView);
-    cb1.mProjection = XMMatrixTranspose(m_cb.mProjection);
-    cb1.vLightDir = m_cb.vLightDir;
-    cb1.vLightColor = m_cb.vLightColor;
-    m_spImCtx->UpdateSubresource(m_spConstant.Get(), 0, nullptr, &cb1, 0, 0);
-    m_spImCtx->VSSetConstantBuffers(0, 1, m_spConstant.GetAddressOf());
-    m_spImCtx->PSSetConstantBuffers(0, 1, m_spConstant.GetAddressOf());
-    m_uptrCylinder->Draw(m_spImCtx);
-
-    cb1.mWorld = XMMatrixTranspose(XMMatrixMultiply(XMMatrixTranslation(0.0f, 1.0f, 0.0f), m_cb.mWorld));
-    m_spImCtx->UpdateSubresource(m_spConstant.Get(), 0, nullptr, &cb1, 0, 0);
-    m_spImCtx->VSSetConstantBuffers(0, 1, m_spConstant.GetAddressOf());
-    m_spImCtx->PSSetConstantBuffers(0, 1, m_spConstant.GetAddressOf());
-    m_uptrCube->Draw(m_spImCtx);
+    m_uptrCylinder->Draw(m_spImCtx, m_space);
+    m_uptrCube->Draw(m_spImCtx, m_space);
 
     HRESULT hr = m_spSwapChain->Present(1, 0);
 }
@@ -155,21 +140,13 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 
     // 几何体
     m_uptrCube = unique_ptr<Cube>(new Cube());
-    m_uptrCube->CreateD3DBuf(m_spD3D11);
+    m_uptrCube->CreateD3DResources(m_spD3D11);
 
     m_uptrCylinder = unique_ptr<Cylinder>(new Cylinder());
-    m_uptrCylinder->CreateD3DBuf(m_spD3D11);
-
-    // 3D空间
-    D3D11_BUFFER_DESC descWorld;
-    ZeroMemory(&descWorld, sizeof(D3D11_BUFFER_DESC));
-    descWorld.Usage = D3D11_USAGE_DEFAULT;
-    descWorld.ByteWidth = sizeof(ConstantBuffer);
-    descWorld.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    hr = m_spD3D11->CreateBuffer(&descWorld, NULL, &m_spConstant);
+    m_uptrCylinder->CreateD3DResources(m_spD3D11);
 
     // 标准空间
-    m_cb.mWorld = XMMatrixIdentity();
+    m_space.mWorld = XMMatrixIdentity();
 
     // 摄像机位
     XMVECTOR Eye = XMVectorSet(3.0f, 8.0f, -30.0f, 0.0f);
@@ -177,11 +154,7 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     // XMVECTOR Eye = XMVectorSet(30.0f, 30.0f, -80.0f, 0.0f);
     XMVECTOR At = XMVectorSet(0.0f, 6.0f, 0.0f, 0.0f);
     XMVECTOR Up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-    m_cb.mView = XMMatrixLookAtLH(Eye, At, Up);
-
-    // 灯光
-    m_cb.vLightDir = XMFLOAT4(-0.577f, 0.577f, -0.577f, 1.0f);
-    m_cb.vLightColor = XMFLOAT4(0.5f, 0.5f, 0.3f, 1.0f);
+    m_space.mView = XMMatrixLookAtLH(Eye, At, Up);
 
     OnSize(hwnd, 0, lpCreateStruct->cx, lpCreateStruct->cy);
 
@@ -258,7 +231,7 @@ void CMainWnd::OnSize(HWND hwnd, UINT state, int cx, int cy)
     m_spImCtx->RSSetViewports(1, &viewPort);
 
     // 镜头
-    m_cb.mProjection = XMMatrixPerspectiveFovLH(XM_PI / 6.0f, viewPort.Width / viewPort.Height, 0.01f, 1000.0f);
+    m_space.mProjection = XMMatrixPerspectiveFovLH(XM_PI / 6.0f, viewPort.Width / viewPort.Height, 0.01f, 1000.0f);
 }
 
 void CMainWnd::OnCommand(HWND hwnd, int id, HWND hwndCtl, UINT codeNotify)
@@ -318,35 +291,4 @@ RECT CMainWnd::calcDefaultWindowRect()
     fnAdjust(rc.top, rc.bottom, maxHeight);
 
     return rc;
-}
-
-HRESULT CMainWnd::loadShader()
-{
-    const int size = MAX_PATH;
-    wchar_t buf[size];
-    GetModuleFileName(NULL, buf, size);
-    wchar_t* pLast = wcsrchr(buf, L'\\');
-    if (pLast == NULL) return E_FAIL;
-
-    auto fnLoad = [](const wchar_t* path, unique_ptr<BYTE>& uptrShader, DWORD& dwSize)->HRESULT{
-        HANDLE hCSO = CreateFile(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-        if (hCSO == INVALID_HANDLE_VALUE) return E_HANDLE;
-        dwSize = GetFileSize(hCSO, NULL);
-        uptrShader = unique_ptr<BYTE>(new BYTE[dwSize]);
-        ReadFile(hCSO, uptrShader.get(), dwSize, &dwSize, NULL);
-        CloseHandle(hCSO);
-        return S_OK;
-    };
-
-    wcscpy_s(pLast + 1, size - ((pLast + 1) - buf), L"VS.cso");
-    fnLoad(buf, m_uptrVS, m_dwVS);
-    HRESULT hr = m_spD3D11->CreateVertexShader(m_uptrVS.get(), m_dwVS, NULL, &m_spVS);
-    if (FAILED(hr)) return hr;
-
-    wcscpy_s(pLast + 1, size - ((pLast + 1) - buf), L"PS.cso");
-    fnLoad(buf, m_uptrPS, m_dwPS);
-    hr = m_spD3D11->CreatePixelShader(m_uptrPS.get(), m_dwPS, NULL, &m_spPS);
-    if (FAILED(hr)) return hr;
-
-    return S_OK;
 }

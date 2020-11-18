@@ -10,24 +10,24 @@ Cube::Cube()
     init();
 }
 
-HRESULT Cube::CreateD3DBuf(ComPtr<ID3D11Device>& spD3D11Dev)
+HRESULT Cube::CreateD3DResources(ComPtr<ID3D11Device>& spD3D11Dev)
 {
-    HRESULT hr = Geometry::CreateD3DBuf(spD3D11Dev);
+    HRESULT hr = Geometry::CreateD3DResources(spD3D11Dev);
     if (FAILED(hr)) return hr;
 
     // 顶点缓冲区
     D3D11_BUFFER_DESC descVertex;
     ZeroMemory(&descVertex, sizeof(D3D11_BUFFER_DESC));
-    descVertex.ByteWidth = sizeof(ColorPoint) * static_cast<UINT>(m_vVertexes.size());
+    descVertex.ByteWidth = sizeof(ColorPoint) * static_cast<UINT>(m_vVertices.size());
     descVertex.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
     D3D11_SUBRESOURCE_DATA xinit;;
     ZeroMemory(&xinit, sizeof(D3D11_SUBRESOURCE_DATA));
-    xinit.pSysMem = m_vVertexes.data();
+    xinit.pSysMem = m_vVertices.data();
     xinit.SysMemPitch = 0;
     xinit.SysMemSlicePitch = 0;
 
-    hr = spD3D11Dev->CreateBuffer(&descVertex, &xinit, &m_spVertexes);
+    hr = spD3D11Dev->CreateBuffer(&descVertex, &xinit, &m_spVertices);
     if (FAILED(hr)) return hr;
 
     // 索引缓冲区
@@ -44,20 +44,31 @@ HRESULT Cube::CreateD3DBuf(ComPtr<ID3D11Device>& spD3D11Dev)
     return S_OK;
 }
 
-void Cube::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx)
+void Cube::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const Space& space)
 {
+    // shader
+    spImCtx->VSSetShader(m_spVS.Get(), nullptr, 0);
+    spImCtx->PSSetShader(m_spPS.Get(), nullptr, 0);
+
+    // constant buffer
+    ConstantBuffer constBuf;
+    XMMATRIX mWorld = XMMatrixTranslation(0.0f, 1.0f, 0.0f) * space.mWorld;
+    constBuf.mWorldViewProjection = XMMatrixTranspose(mWorld * space.mView * space.mProjection);
+    constBuf.nTextured = 0;
+
+    spImCtx->UpdateSubresource(m_spConstBuf.Get(), 0, nullptr, &constBuf, 0, 0);
+    spImCtx->VSSetConstantBuffers(0, 1, m_spConstBuf.GetAddressOf());
+    spImCtx->PSSetConstantBuffers(0, 1, m_spConstBuf.GetAddressOf());
+
+    // input layout
     spImCtx->IASetInputLayout(m_spIL.Get());
     spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-    // 设定顶点数据
+    // vertices & indexes
     UINT stride = sizeof(ColorPoint);
     UINT offset = 0;
-    spImCtx->IASetVertexBuffers(0, 1, m_spVertexes.GetAddressOf(), &stride, &offset);
+    spImCtx->IASetVertexBuffers(0, 1, m_spVertices.GetAddressOf(), &stride, &offset);
     spImCtx->IASetIndexBuffer(m_spIndexes.Get(), DXGI_FORMAT_R32_UINT, 0);
-
-    // shader
-    spImCtx->VSSetShader(m_spVS.Get(), NULL, 0);
-    spImCtx->PSSetShader(m_spPS.Get(), NULL, 0);
 
     spImCtx->DrawIndexed(static_cast<UINT>(m_vIndexes.size()), 0, 0);
 }
@@ -66,7 +77,7 @@ void Cube::init()
 {
     XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.6f, 0.0f, 1.0f);
     // 一个立方体有8个顶点 POSITION, COLOR
-    m_vVertexes = {
+    m_vVertices = {
         { XMFLOAT4(-1.0f,  1.0f, -1.0f, 1.0f), xmf4Color },
         { XMFLOAT4(1.0f ,  1.0f, -1.0f, 1.0f), xmf4Color },
         { XMFLOAT4(1.0f ,  1.0f,  1.0f, 1.0f), xmf4Color },

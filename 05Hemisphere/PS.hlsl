@@ -1,11 +1,8 @@
 
 cbuffer ConstantBuffer : register(b0)
 {
-    matrix World;
-    matrix View;
-    matrix Projection;
-    float4 vLightDir;
-    float4 vLightColor;
+    matrix WorldViewProjection;
+    uint Textured;
 }
 
 struct VS_OUTPUT
@@ -14,7 +11,15 @@ struct VS_OUTPUT
     float4 Color : COLOR0;
 };
 
+Texture2D gTex2D : register(t0);
+SamplerState samLinear : register(s0);
+
 float4 main(VS_OUTPUT input) : SV_Target
 {
-    return input.Color;
+    if (Textured > 0) {
+        return gTex2D.Sample(samLinear, float2(0.5,0.3));
+        }
+    else {
+        return input.Color;
+    }
 }

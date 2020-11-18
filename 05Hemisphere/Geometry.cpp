@@ -4,9 +4,21 @@
 using namespace std;
 using namespace Microsoft::WRL;
 
-HRESULT Geometry::CreateD3DBuf(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev)
+HRESULT Geometry::CreateD3DResources(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev)
 {
-    return createInputLayout(spD3D11Dev);
+    HRESULT hr = createConstantBuffer(spD3D11Dev);
+    if (FAILED(hr)) return hr;
+
+    hr = loadShader(spD3D11Dev);
+    if (FAILED(hr)) return hr;
+
+    hr = createInputLayout(spD3D11Dev);
+    if (FAILED(hr)) return hr;
+
+    hr = createSamplerState(spD3D11Dev);
+    if (FAILED(hr)) return hr;
+
+    return S_OK;
 }
 
 HRESULT Geometry::loadShader(ComPtr<ID3D11Device>& spD3D11Dev)
@@ -40,12 +52,20 @@ HRESULT Geometry::loadShader(ComPtr<ID3D11Device>& spD3D11Dev)
     return S_OK;
 }
 
+HRESULT Geometry::createConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev)
+{
+    // shader constant buffer
+    D3D11_BUFFER_DESC descConstBuf;
+    ZeroMemory(&descConstBuf, sizeof(D3D11_BUFFER_DESC));
+    descConstBuf.Usage = D3D11_USAGE_DEFAULT;
+    descConstBuf.ByteWidth = sizeof(ConstantBuffer);
+    descConstBuf.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    HRESULT hr = spD3D11Dev->CreateBuffer(&descConstBuf, NULL, &m_spConstBuf);
+    return hr;
+}
+
 HRESULT Geometry::createInputLayout(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev)
 {
-    // shader
-    HRESULT hr = loadShader(spD3D11Dev);
-    if (FAILED(hr)) return hr;
-
     // input layout
     D3D11_INPUT_ELEMENT_DESC layout[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -53,6 +73,36 @@ HRESULT Geometry::createInputLayout(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D1
         { "NORMAL"  , 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0 }
     };
-    hr = spD3D11Dev->CreateInputLayout(layout, sizeof(layout) / sizeof(D3D11_INPUT_ELEMENT_DESC), m_uptrVS.get(), m_dwVS, &m_spIL);
+    HRESULT hr = spD3D11Dev->CreateInputLayout(layout, sizeof(layout) / sizeof(D3D11_INPUT_ELEMENT_DESC), m_uptrVS.get(), m_dwVS, &m_spIL);
     return hr;
+}
+
+HRESULT Geometry::createSamplerState(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev)
+{
+    D3D11_SAMPLER_DESC descSampler = {
+        D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+        D3D11_TEXTURE_ADDRESS_CLAMP,
+        D3D11_TEXTURE_ADDRESS_CLAMP,
+        D3D11_TEXTURE_ADDRESS_CLAMP,
+        0.0f,
+        1,
+        D3D11_COMPARISON_NEVER,
+        {0.0f, 0.0f, 0.0f, 0.0f},
+        -FLT_MAX,
+        +FLT_MAX
+    };
+    HRESULT hr = spD3D11Dev->CreateSamplerState(&descSampler, m_spSamplerState.GetAddressOf());
+    return hr;
+}
+
+HRESULT Geometry::loadTexture2D(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev, const std::string& strPathImage)
+{
+    m_image.LoadImage(strPathImage);
+    HRESULT hr = m_image.CreateTexture2D(spD3D11Dev, m_spTexture2D);
+    if (FAILED(hr)) return hr;
+
+    hr = spD3D11Dev->CreateShaderResourceView(m_spTexture2D.Get(), nullptr, m_spSRV.GetAddressOf());
+    if (FAILED(hr)) return hr;
+
+    return S_OK;
 }

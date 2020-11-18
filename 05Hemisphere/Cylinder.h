@@ -7,23 +7,23 @@ class Cylinder : public Geometry
 public:
     Cylinder();
 
-    HRESULT CreateD3DBuf(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev) override;
-    void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx) override;
+    HRESULT CreateD3DResources(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev) override;
+    void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const Space& space) override;
 private:
     float m_fRadius = 20.0f;
     float m_fHeight = 10.0f;
 
-    int m_nStepsArc    = 36; // 圆弧分割步数
+    int m_nStepsArc = 36; // 圆弧分割步数
     // 底面
-    std::vector<ColorPoint> m_vBottomVertexes;
+    std::vector<ColorPoint> m_vBottomVertices;
     std::vector<UINT> m_vBottomIndexes;
-    Microsoft::WRL::ComPtr<ID3D11Buffer> m_spBottomVertexes;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_spBottomVertices;
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_spBottomIndexes;
 
     // 侧面
-    std::vector<ColorPoint> m_vSideVertexes;
+    std::vector<ColorPoint> m_vSideVertices;
     std::vector<UINT> m_vSideIndexes;
-    Microsoft::WRL::ComPtr<ID3D11Buffer> m_spSideVertexes;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> m_spSideVertices;
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_spSideIndexes;
 
     // 初始化数据
