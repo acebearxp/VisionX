@@ -1,5 +1,6 @@
 ﻿#include "stdafx.h"
 #include "Geometry.h"
+#include "Karmeliet.h"
 
 using namespace std;
 using namespace Microsoft::WRL;
@@ -95,13 +96,16 @@ HRESULT Geometry::createSamplerState(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D
     return hr;
 }
 
-HRESULT Geometry::loadTexture2D(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev, const std::string& strPathImage)
+HRESULT Geometry::loadTexture2D(ComPtr<ID3D11Device>& spD3D11Dev, const std::string& strPathImage,
+    ComPtr<ID3D11Texture2D>& spTex2D, ComPtr<ID3D11ShaderResourceView>& spSRV)
 {
-    m_image.LoadImage(strPathImage);
-    HRESULT hr = m_image.CreateTexture2D(spD3D11Dev, m_spTexture2D);
+    Karmeliet kaImage;
+    kaImage.LoadImage(strPathImage);
+
+    HRESULT hr = kaImage.CreateTexture2D(spD3D11Dev, spTex2D);
     if (FAILED(hr)) return hr;
 
-    hr = spD3D11Dev->CreateShaderResourceView(m_spTexture2D.Get(), nullptr, m_spSRV.GetAddressOf());
+    hr = spD3D11Dev->CreateShaderResourceView(spTex2D.Get(), nullptr, spSRV.GetAddressOf());
     if (FAILED(hr)) return hr;
 
     return S_OK;

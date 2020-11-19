@@ -55,8 +55,20 @@ HRESULT Cylinder::CreateD3DResources(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D
     hr = fnCreateD3DBuf(m_vSideVertices, m_vSideIndexes, m_spSideVertices, m_spSideIndexes);
     if (FAILED(hr)) return hr;
 
-    hr = loadTexture2D(spD3D11Dev, R"(D:/VisionX/01Hello/front.jpg)");
-    if (FAILED(hr)) return hr;
+    // texture
+    vector<string> vPaths = {
+        R"(D:/VisionX/01Hello/front.jpg)", // Pi*0/2
+        R"(D:/VisionX/01Hello/right.jpg)", // Pi*1/2
+        R"(D:/VisionX/01Hello/back.jpg)",  // Pi*2/2
+        R"(D:/VisionX/01Hello/left.jpg)"   // Pi*3/2
+    };
+    for (const string& strPath : vPaths) {
+        Texture2DResource tex2DRes;
+        hr = loadTexture2D(spD3D11Dev, strPath, tex2DRes.spD3D11Tex2D, tex2DRes.spD3D11SRV);
+        if (FAILED(hr)) return hr;
+
+        m_vTex2D.push_back(tex2DRes);
+    }
 
     return S_OK;
 }
@@ -70,7 +82,7 @@ void Cylinder::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const 
     // constant buffer
     ConstantBuffer constBuf;
     constBuf.mWorldViewProjection = XMMatrixTranspose(space.mWorld * space.mView * space.mProjection);
-    constBuf.nTextured = 1;
+    constBuf.nTextured = 0;
 
     spImCtx->UpdateSubresource(m_spConstBuf.Get(), 0, nullptr, &constBuf, 0, 0);
     spImCtx->VSSetConstantBuffers(0, 1, m_spConstBuf.GetAddressOf());
@@ -78,24 +90,60 @@ void Cylinder::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const 
 
     // input layout
     spImCtx->IASetInputLayout(m_spIL.Get());
-
-    // texture
+    // sampler state
     spImCtx->PSSetSamplers(0, 1, m_spSamplerState.GetAddressOf());
-    spImCtx->PSSetShaderResources(0, 1, m_spSRV.GetAddressOf());
+    // texture
+    int nTexIdx = 0;
+    spImCtx->PSSetShaderResources(0, 1, m_vTex2D[nTexIdx].spD3D11SRV.GetAddressOf());
 
-    // bottom
     const UINT stride = sizeof(ColorPoint);
     const UINT offset = 0;
-    spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    spImCtx->IASetVertexBuffers(0, 1, m_spBottomVertices.GetAddressOf(), &stride, &offset);
-    spImCtx->IASetIndexBuffer(m_spBottomIndexes.Get(), DXGI_FORMAT_R32_UINT, 0);
-    spImCtx->DrawIndexed(static_cast<UINT>(m_vBottomIndexes.size()), 0, 0);
 
-    // side
-    spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-    spImCtx->IASetVertexBuffers(0, 1, m_spSideVertices.GetAddressOf(), &stride, &offset);
-    spImCtx->IASetIndexBuffer(m_spSideIndexes.Get(), DXGI_FORMAT_R32_UINT, 0);
-    spImCtx->Draw(static_cast<UINT>(m_vSideVertices.size()), 0);
+    // 先用简单的办法,画一部分,换一个纹理
+    static bool bShow = true;
+    for (int i = 0; i < 2 * m_vTex2D.size(); i++) {
+        int from = static_cast<int>(i * m_nStepsArc / (2 * m_vTex2D.size()));
+        int to = static_cast<int>((i + 1) * m_nStepsArc / (2 * m_vTex2D.size()));
+        
+        // 切换纹理
+        if (i % 2 == 1) {
+            nTexIdx = (nTexIdx + 1) % m_vTex2D.size();
+            spImCtx->PSSetShaderResources(0, 1, m_vTex2D[nTexIdx].spD3D11SRV.GetAddressOf());
+        }
+
+        // side
+        constBuf.nTextured = 1;
+        spImCtx->UpdateSubresource(m_spConstBuf.Get(), 0, nullptr, &constBuf, 0, 0);
+        spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+        spImCtx->IASetVertexBuffers(0, 1, m_spSideVertices.GetAddressOf(), &stride, &offset);
+        spImCtx->IASetIndexBuffer(m_spSideIndexes.Get(), DXGI_FORMAT_R32_UINT, 0);
+        spImCtx->Draw(2 * (to - from + 1), 2 * from);
+
+        // bottom
+        constBuf.nTextured = 0;
+        spImCtx->UpdateSubresource(m_spConstBuf.Get(), 0, nullptr, &constBuf, 0, 0);
+        // spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        spImCtx->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);
+        spImCtx->IASetVertexBuffers(0, 1, m_spBottomVertices.GetAddressOf(), &stride, &offset);
+        spImCtx->IASetIndexBuffer(m_spBottomIndexes.Get(), DXGI_FORMAT_R32_UINT, 0);
+        spImCtx->DrawIndexed(3 * (to - from), 3 * from, 0);
+
+        if (bShow) {
+            wchar_t buf[1024];
+            swprintf_s(buf, L"===> from: %d, to: %d, to-from: %d\n", from, to, to-from);
+            OutputDebugString(buf);
+        }
+    }
+    bShow = false;
+
+    
+
+    // bottom
+    // spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    // spImCtx->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);
+    // spImCtx->IASetVertexBuffers(0, 1, m_spBottomVertices.GetAddressOf(), &stride, &offset);
+    // spImCtx->IASetIndexBuffer(m_spBottomIndexes.Get(), DXGI_FORMAT_R32_UINT, 0);
+    // spImCtx->DrawIndexed(static_cast<UINT>(m_vBottomIndexes.size()), 0, 0);
 }
 
 void Cylinder::init()
@@ -121,7 +169,7 @@ void Cylinder::init()
 		m_vBottomVertices.push_back({ XMFLOAT4(fx, 0.0f, fz, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.0f, 0.5f) });
 
         XMFLOAT4 xmf4ToCenter(-fx1, 0.0f, -fz1, 1.0f); // 指向柱心
-        m_vSideVertices.push_back({ XMFLOAT4(fx, fy0, fz, 1.0f), xmf4Color, xmf4ToCenter, XMFLOAT2(fU, (m_fHeight - fy0) / m_fHeight) });
+        m_vSideVertices.push_back({ XMFLOAT4(fx, fy0, fz, 1.0f), xmf4Color, xmf4ToCenter, XMFLOAT2(fU, (m_fHeight - fy0) / m_fHeight - 0.5f) });
         m_vSideVertices.push_back({ XMFLOAT4(fx, fy1, fz, 1.0f), xmf4Color, xmf4ToCenter, XMFLOAT2(fU, (m_fHeight - fy1) / m_fHeight) });
         if (i == 0) continue;
         // triangle list for bottom

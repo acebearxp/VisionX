@@ -61,6 +61,7 @@ void CMainWnd::Render()
 
     // rotating
     m_space.mWorld = XMMatrixRotationY((GetTickCount64() - m_u64Begin) / 3000.0f);
+    //m_space.mWorld = XMMatrixRotationY(0.0f);
 
     m_spImCtx->RSSetState(m_spRSSolid.Get());
     m_uptrCylinder->Draw(m_spImCtx, m_space);

@@ -41,8 +41,8 @@ HRESULT Cube::CreateD3DResources(ComPtr<ID3D11Device>& spD3D11Dev)
     hr = spD3D11Dev->CreateBuffer(&descCubeIndex, &xinit, &m_spIndexes);
     if (FAILED(hr)) return hr;
 
-    hr = loadTexture2D(spD3D11Dev, R"(D:/VisionX/01Hello/1.jpg)");
-    if (FAILED(hr)) return hr;
+    // hr = loadTexture2D(spD3D11Dev, R"(D:/VisionX/01Hello/1.jpg)");
+    // if (FAILED(hr)) return hr;
 
     return S_OK;
 }
@@ -75,7 +75,7 @@ void Cube::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const Spac
 
     // sampler state
     spImCtx->PSSetSamplers(0, 1, m_spSamplerState.GetAddressOf());
-    spImCtx->PSSetShaderResources(0, 1, m_spSRV.GetAddressOf());
+    // spImCtx->PSSetShaderResources(0, 1, m_spSRV.GetAddressOf());
 
     spImCtx->DrawIndexed(static_cast<UINT>(m_vIndexes.size()), 0, 0);
 }

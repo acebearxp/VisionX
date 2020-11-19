@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include "Karmeliet.h"
-
 struct Space
 {
     DirectX::XMMATRIX mWorld;
@@ -37,14 +35,10 @@ protected:
 
     // constant buffer
     Microsoft::WRL::ComPtr<ID3D11Buffer> m_spConstBuf;
-
     // input layout
     Microsoft::WRL::ComPtr<ID3D11InputLayout> m_spIL;
-    // texture
-    Karmeliet m_image;
+    // sampler state
     Microsoft::WRL::ComPtr<ID3D11SamplerState> m_spSamplerState;
-    Microsoft::WRL::ComPtr<ID3D11Texture2D> m_spTexture2D;
-    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_spSRV;
 
     // 加载shader
     virtual HRESULT loadShader(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev);
@@ -54,6 +48,10 @@ protected:
     virtual HRESULT createInputLayout(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev);
     // create sampler state
     virtual HRESULT createSamplerState(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev);
+protected:
     // load texture
-    virtual HRESULT loadTexture2D(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev, const std::string& strPathImage);
+    static HRESULT loadTexture2D(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev,
+        const std::string& strPathImage,
+        Microsoft::WRL::ComPtr<ID3D11Texture2D>& spTex2D,
+        Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& spSRV);
 };
