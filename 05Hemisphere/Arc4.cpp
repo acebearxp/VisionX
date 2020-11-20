@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Arc4.h"
+#include "Karmeliet.h"
 
 using namespace std;
 using namespace DirectX;
@@ -60,9 +61,16 @@ HRESULT Arc4::CreateD3DResources(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11De
         R"(D:/VisionX/01Hello/back.jpg)",  // Pi*2/2
         R"(D:/VisionX/01Hello/left.jpg)"   // Pi*3/2
     };
-    for (const string& strPath : vPaths) {
+    for (int i = 0; i < vPaths.size();i++) {
+        const string& strPath = vPaths[i];
+
+        Karmeliet kaImage;
+        kaImage.LoadTexture(strPath);
+
+        if (i % 2 == 1) kaImage.applyAlpha(0.30f, 0.7f);
+
         Texture2DResource tex2DRes;
-        hr = loadTexture2D(spD3D11Dev, strPath, tex2DRes.spD3D11Tex2D, tex2DRes.spD3D11SRV);
+        hr = loadTexture2D(spD3D11Dev, kaImage.GetData(), tex2DRes.spD3D11Tex2D, tex2DRes.spD3D11SRV);
         if (FAILED(hr)) return hr;
 
         m_vTex2D.push_back(tex2DRes);
@@ -91,12 +99,16 @@ void Arc4::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const Spac
     const UINT offset = 0;
 
     // 四段拼成
-    for (int i = 0; i < 4; i++) {
-        XMMATRIX mRotate = XMMatrixRotationY(XM_PIDIV2 * i - XM_PIDIV4);
-        constBuf.mWorldViewProjection = XMMatrixTranspose(mRotate * space.mWorld * space.mView * space.mProjection);
+    vector<int> vSequence = { 0, 2, 3, 1 };
+    for (int i = 0; i < vSequence.size(); i++) {
+        int x = vSequence[i];
+        XMMATRIX mRotate = XMMatrixRotationY(XM_PIDIV2 * x - XM_PIDIV4 - m_fMargin);
+        float fScale = (x % 2 == 0) ? 1.005f : 1.0f; // 0,2前后略远 1,3右左略近(for blending) 
+        XMMATRIX mScale = XMMatrixScaling(fScale, 1.0f, fScale);
+        constBuf.mWorldViewProjection = XMMatrixTranspose(mScale * mRotate * space.mWorld * space.mView * space.mProjection);
         constBuf.nTextured = 0;
         spImCtx->UpdateSubresource(m_spConstBuf.Get(), 0, nullptr, &constBuf, 0, 0);
-        spImCtx->PSSetShaderResources(0, 1, m_vTex2D[i].spD3D11SRV.GetAddressOf());
+        spImCtx->PSSetShaderResources(0, 1, m_vTex2D[x].spD3D11SRV.GetAddressOf());
 
         // bottom
         // spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -123,12 +135,12 @@ void Arc4::init()
 
     float fy0 = 0.0f, fy1 = m_fHeight;
     for (int i = 0; i <= m_nStepsArc; i++) {
-        float fTheta = XM_PIDIV2 * i / m_nStepsArc; // 方位角
+        float fTheta = (XM_PIDIV2 + m_fMargin * 2.0f) * i / m_nStepsArc; // 方位角
         float fx1 = XMScalarSin(fTheta);
         float fz1 = XMScalarCos(fTheta);;
         float fx = m_fRadius * fx1;
         float fz = m_fRadius * fz1;
-        float fU = 0.65f * (fTheta - XM_PIDIV4) / XM_PIDIV2 + 0.5f;
+        float fU = 0.65f * (fTheta - (XM_PIDIV4 + m_fMargin)) / (XM_PIDIV2 + m_fMargin) + 0.5f;
 
         m_vBottomVertices.push_back({ XMFLOAT4(fx, 0.0f, fz, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.0f, 0.5f) });
 

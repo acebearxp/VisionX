@@ -100,7 +100,22 @@ HRESULT Geometry::loadTexture2D(ComPtr<ID3D11Device>& spD3D11Dev, const std::str
     ComPtr<ID3D11Texture2D>& spTex2D, ComPtr<ID3D11ShaderResourceView>& spSRV)
 {
     Karmeliet kaImage;
-    kaImage.LoadImage(strPathImage);
+    kaImage.LoadTexture(strPathImage);
+
+    HRESULT hr = kaImage.CreateTexture2D(spD3D11Dev, spTex2D);
+    if (FAILED(hr)) return hr;
+
+    hr = spD3D11Dev->CreateShaderResourceView(spTex2D.Get(), nullptr, spSRV.GetAddressOf());
+    if (FAILED(hr)) return hr;
+
+    return S_OK;
+}
+
+HRESULT Geometry::loadTexture2D(ComPtr<ID3D11Device>& spD3D11Dev, const cv::Mat& image,
+    ComPtr<ID3D11Texture2D>& spTex2D, ComPtr<ID3D11ShaderResourceView>& spSRV)
+{
+    Karmeliet kaImage;
+    kaImage.LoadTextureRGBA(image);
 
     HRESULT hr = kaImage.CreateTexture2D(spD3D11Dev, spTex2D);
     if (FAILED(hr)) return hr;

@@ -55,7 +55,9 @@ void Cube::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const Spac
 
     // constant buffer
     ConstantBuffer constBuf;
-    XMMATRIX mWorld = XMMatrixTranslation(0.0f, 1.0f, 0.0f) * space.mWorld;
+    XMMATRIX mWorld = XMMatrixTranslation(0.0f, 1.0f, 0.0f)
+        * XMMatrixScaling(1.0f, 0.5f, 2.0f)
+        * space.mWorld;
     constBuf.mWorldViewProjection = XMMatrixTranspose(mWorld * space.mView * space.mProjection);
     constBuf.nTextured = 0;
 
@@ -82,18 +84,19 @@ void Cube::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const Spac
 
 void Cube::init()
 {
-    XMFLOAT4 xmf4Color = XMFLOAT4(0.0f, 0.6f, 0.0f, 1.0f);
+    XMFLOAT4 xmf4Color = XMFLOAT4(0.2f, 0.6f, 0.2f, 1.0f);
+    XMFLOAT4 xmf4Color2 = XMFLOAT4(0.6f, 0.0f, 0.0f, 1.0f);
     XMFLOAT4 xmf4Up(0.0f, 1.0f, 0.0f, 1.0f);
     // 一个立方体有8个顶点 POSITION, COLOR
     m_vVertices = {
-        { XMFLOAT4(-1.0f,  1.0f, -1.0f, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.0f, 1.0f) },
-        { XMFLOAT4(1.0f ,  1.0f, -1.0f, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(1.0f, 0.0f) },
-        { XMFLOAT4(1.0f ,  1.0f,  1.0f, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.0f, 1.0f) },
-        { XMFLOAT4(-1.0f,  1.0f,  1.0f, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.0f, 0.0f) },
-        { XMFLOAT4(-1.0f, -1.0f, -1.0f, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.5f, 0.5f) },
-        { XMFLOAT4(1.0f , -1.0f, -1.0f, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.5f, 0.5f) },
-        { XMFLOAT4(1.0f , -1.0f,  1.0f, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.5f, 0.5f) },
-        { XMFLOAT4(-1.0f, -1.0f,  1.0f, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.5f, 0.5f) }
+        { XMFLOAT4(-1.0f,  1.0f, -1.0f, 1.0f), xmf4Color2, xmf4Up, XMFLOAT2(0.0f, 1.0f) },
+        { XMFLOAT4(1.0f ,  1.0f, -1.0f, 1.0f), xmf4Color2, xmf4Up, XMFLOAT2(1.0f, 0.0f) },
+        { XMFLOAT4(1.0f ,  1.0f,  1.0f, 1.0f), xmf4Color,  xmf4Up, XMFLOAT2(0.0f, 1.0f) },
+        { XMFLOAT4(-1.0f,  1.0f,  1.0f, 1.0f), xmf4Color,  xmf4Up, XMFLOAT2(0.0f, 0.0f) },
+        { XMFLOAT4(-1.0f, -1.0f, -1.0f, 1.0f), xmf4Color2, xmf4Up, XMFLOAT2(0.5f, 0.5f) },
+        { XMFLOAT4(1.0f , -1.0f, -1.0f, 1.0f), xmf4Color2, xmf4Up, XMFLOAT2(0.5f, 0.5f) },
+        { XMFLOAT4(1.0f , -1.0f,  1.0f, 1.0f), xmf4Color,  xmf4Up, XMFLOAT2(0.5f, 0.5f) },
+        { XMFLOAT4(-1.0f, -1.0f,  1.0f, 1.0f), xmf4Color,  xmf4Up, XMFLOAT2(0.5f, 0.5f) }
     };
 
     // 转换为一系列的三角形,立方体有6个面,每个面拆成2个三角形,三角形3个点,共计3*2*6=36个点

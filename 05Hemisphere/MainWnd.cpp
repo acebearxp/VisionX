@@ -58,6 +58,7 @@ void CMainWnd::Render()
 
     // set render target
     m_spImCtx->OMSetRenderTargets(1, m_spRTV.GetAddressOf(), m_spZView.Get());
+    m_spImCtx->OMSetBlendState(m_spBlendState.Get(), nullptr, UINT_MAX);
 
     // rotating
     m_space.mWorld = XMMatrixRotationY((GetTickCount64() - m_u64Begin) / 3000.0f);
@@ -138,9 +139,28 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     descRS.DepthClipEnable = TRUE;
     descRS.MultisampleEnable = TRUE;
     hr = m_spD3D11->CreateRasterizerState(&descRS, &m_spRSSolid);
+    if (FAILED(hr)) return FALSE;
 
     descRS.FillMode = D3D11_FILL_WIREFRAME;
     hr = m_spD3D11->CreateRasterizerState(&descRS, &m_spRSWireframe);
+    if (FAILED(hr)) return FALSE;
+
+    // blend
+    D3D11_RENDER_TARGET_BLEND_DESC descRT;
+    descRT.BlendEnable = TRUE;
+    descRT.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+    descRT.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+    descRT.BlendOp = D3D11_BLEND_OP_ADD;
+    descRT.SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;
+    descRT.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
+    descRT.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+    descRT.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+    D3D11_BLEND_DESC descBlend;
+    ZeroMemory(&descBlend, sizeof(D3D11_BLEND_DESC));
+    descBlend.RenderTarget[0] = descRT;
+    hr = m_spD3D11->CreateBlendState(&descBlend, m_spBlendState.GetAddressOf());
+    if (FAILED(hr)) return FALSE;
 
     // 几何体
     m_uptrCube = unique_ptr<Cube>(new Cube());

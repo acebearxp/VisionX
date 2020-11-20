@@ -9,13 +9,43 @@ Karmeliet::Karmeliet()
 {
 }
 
-bool Karmeliet::LoadImage(const string& strPath)
+bool Karmeliet::LoadTexture(const string& strPath)
 {
 	// BGR
 	cv::Mat image = cv::imread(strPath, cv::ImreadModes::IMREAD_COLOR);
-	//calibrate(image, image);
 	cv::cvtColor(image, m_image, cv::ColorConversionCodes::COLOR_BGR2RGBA);
+
 	return true;
+}
+
+bool Karmeliet::LoadTextureRGBA(const cv::Mat& image)
+{
+	m_image = image;
+	return true;
+}
+
+void Karmeliet::applyAlpha(float fxs, float fxt)
+{
+	// RGBA
+	int center = m_image.cols / 2;
+
+	for (int y = 0; y < m_image.rows; y++) {
+		for (int x = 0; x < m_image.cols; x++) {
+			float fDelta = fabs(1.0f * (x - center) / center);
+			float fAlpha = (fDelta - fxt) / (fxs - fxt);
+
+			if (fAlpha > 1.0f) fAlpha = 1.0f;
+			if (fAlpha < 0.0f) fAlpha = 0.0f;
+			cv::Vec4b& color = m_image.at<cv::Vec4b>(y, x);
+			color[3] = static_cast<uchar>(fAlpha * 0xff);
+
+			if (y == 0) {
+				wchar_t buf[1024];
+				swprintf_s(buf, L"==> delta: %1.3f, alpha: %1.3f\n", fDelta, fAlpha);
+				OutputDebugString(buf);
+			}
+		}
+	}
 }
 
 HRESULT Karmeliet::CreateTexture2D(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev, Microsoft::WRL::ComPtr<ID3D11Texture2D>& spTexture2D)

@@ -12,7 +12,9 @@ private:
 	float m_fRadius = 20.0f;
 	float m_fHeight = 12.0f;
 
-	int m_nStepsArc = 9; // 圆弧分割步数
+    // 左右多一点重叠
+    float m_fMargin = DirectX::XM_PIDIV4 / 9.0f;
+    int m_nStepsArc = 9; // 圆弧分割步数
 
     // 底面
     std::vector<ColorPoint> m_vBottomVertices;

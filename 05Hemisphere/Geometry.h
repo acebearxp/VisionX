@@ -60,4 +60,8 @@ protected:
         const std::string& strPathImage,
         Microsoft::WRL::ComPtr<ID3D11Texture2D>& spTex2D,
         Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& spSRV);
+    static HRESULT loadTexture2D(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev,
+        const cv::Mat& image,
+        Microsoft::WRL::ComPtr<ID3D11Texture2D>& spTex2D,
+        Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>& spSRV);
 };

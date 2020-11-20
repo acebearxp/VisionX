@@ -41,6 +41,8 @@ private:
     Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_spRSSolid;
     Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_spRSWireframe;
 
+    Microsoft::WRL::ComPtr<ID3D11BlendState> m_spBlendState;
+
     // geometry
     std::unique_ptr<Cube> m_uptrCube;
     std::unique_ptr<Cylinder> m_uptrCylinder;
