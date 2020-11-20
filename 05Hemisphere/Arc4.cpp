@@ -128,7 +128,7 @@ void Arc4::init()
         float fz1 = XMScalarCos(fTheta);;
         float fx = m_fRadius * fx1;
         float fz = m_fRadius * fz1;
-        float fU = fTheta / XM_PIDIV2;
+        float fU = 0.65f * (fTheta - XM_PIDIV4) / XM_PIDIV2 + 0.5f;
 
         m_vBottomVertices.push_back({ XMFLOAT4(fx, 0.0f, fz, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.0f, 0.5f) });
 
