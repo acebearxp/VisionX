@@ -3,6 +3,7 @@
 #include "resource.h"
 #include "Cube.h"
 #include "Cylinder.h"
+#include "Arc4.h"
 
 class CMainWnd final : public CXWnd
 {
@@ -43,6 +44,7 @@ private:
     // geometry
     std::unique_ptr<Cube> m_uptrCube;
     std::unique_ptr<Cylinder> m_uptrCylinder;
+    std::unique_ptr<Arc4> m_uptrArc4;
 
     // world view projection
     Space m_space;

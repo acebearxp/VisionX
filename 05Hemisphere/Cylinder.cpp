@@ -99,8 +99,7 @@ void Cylinder::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const 
     const UINT stride = sizeof(ColorPoint);
     const UINT offset = 0;
 
-    // 先用简单的办法,画一部分,换一个纹理
-    static bool bShow = true;
+    // 画一部分,换一个纹理
     for (int i = 0; i < 2 * m_vTex2D.size(); i++) {
         int from = static_cast<int>(i * m_nStepsArc / (2 * m_vTex2D.size()));
         int to = static_cast<int>((i + 1) * m_nStepsArc / (2 * m_vTex2D.size()));
@@ -127,23 +126,7 @@ void Cylinder::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const 
         spImCtx->IASetVertexBuffers(0, 1, m_spBottomVertices.GetAddressOf(), &stride, &offset);
         spImCtx->IASetIndexBuffer(m_spBottomIndexes.Get(), DXGI_FORMAT_R32_UINT, 0);
         spImCtx->DrawIndexed(3 * (to - from), 3 * from, 0);
-
-        if (bShow) {
-            wchar_t buf[1024];
-            swprintf_s(buf, L"===> from: %d, to: %d, to-from: %d\n", from, to, to-from);
-            OutputDebugString(buf);
-        }
     }
-    bShow = false;
-
-    
-
-    // bottom
-    // spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    // spImCtx->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_LINESTRIP);
-    // spImCtx->IASetVertexBuffers(0, 1, m_spBottomVertices.GetAddressOf(), &stride, &offset);
-    // spImCtx->IASetIndexBuffer(m_spBottomIndexes.Get(), DXGI_FORMAT_R32_UINT, 0);
-    // spImCtx->DrawIndexed(static_cast<UINT>(m_vBottomIndexes.size()), 0, 0);
 }
 
 void Cylinder::init()

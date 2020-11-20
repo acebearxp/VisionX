@@ -13,6 +13,12 @@ struct ConstantBuffer
     uint nTextured;
 };
 
+struct Texture2DResource
+{
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> spD3D11Tex2D;
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> spD3D11SRV;
+};
+
 struct ColorPoint
 {
     DirectX::XMFLOAT4 Point;

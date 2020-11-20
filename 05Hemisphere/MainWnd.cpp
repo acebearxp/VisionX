@@ -64,7 +64,8 @@ void CMainWnd::Render()
     //m_space.mWorld = XMMatrixRotationY(0.0f);
 
     m_spImCtx->RSSetState(m_spRSSolid.Get());
-    m_uptrCylinder->Draw(m_spImCtx, m_space);
+    //m_uptrCylinder->Draw(m_spImCtx, m_space);
+    m_uptrArc4->Draw(m_spImCtx, m_space);
 
     m_spImCtx->RSSetState(m_spRSWireframe.Get());
     m_uptrCube->Draw(m_spImCtx, m_space);
@@ -148,6 +149,9 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
 
     m_uptrCylinder = unique_ptr<Cylinder>(new Cylinder());
     m_uptrCylinder->CreateD3DResources(m_spD3D11);
+
+    m_uptrArc4 = unique_ptr<Arc4>(new Arc4());
+    m_uptrArc4->CreateD3DResources(m_spD3D11);
 
     // 标准空间
     m_space.mWorld = XMMatrixIdentity();
