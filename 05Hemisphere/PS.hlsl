@@ -3,6 +3,8 @@ cbuffer ConstantBuffer : register(b0)
 {
     matrix WorldViewProjection;
     uint Textured;
+    float TexScaleV;
+    float TexTransformV;
 }
 
 struct VS_OUTPUT
@@ -19,7 +21,8 @@ SamplerState samLinear : register(s0);
 float4 main(VS_OUTPUT input) : SV_Target
 {
     if (Textured > 0) {
-        return gTex2D.Sample(samLinear, input.Tex);
+
+        return gTex2D.Sample(samLinear, float2(1.0f, TexScaleV) * input.Tex + float2(0.0f, TexTransformV));
         }
     else {
         return input.Color;

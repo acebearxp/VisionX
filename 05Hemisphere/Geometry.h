@@ -11,6 +11,8 @@ struct ConstantBuffer
 {
     DirectX::XMMATRIX mWorldViewProjection;
     uint nTextured;
+    float fTexScaleV = 1.0f;
+    float fTexTransformV = 0.0f;
 };
 
 struct Texture2DResource

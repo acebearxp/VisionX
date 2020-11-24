@@ -67,7 +67,8 @@ HRESULT Arc4::CreateD3DResources(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11De
         Karmeliet kaImage;
         kaImage.LoadTexture(strPath);
 
-        if (i % 2 == 1) kaImage.applyAlpha(0.30f, 0.7f);
+        //if (i % 2 == 1)
+        kaImage.applyAlpha(0.30f, m_fUMax);
 
         Texture2DResource tex2DRes;
         hr = loadTexture2D(spD3D11Dev, kaImage.GetData(), tex2DRes.spD3D11Tex2D, tex2DRes.spD3D11SRV);
@@ -99,14 +100,20 @@ void Arc4::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const Spac
     const UINT offset = 0;
 
     // 四段拼成
-    vector<int> vSequence = { 0, 2, 3, 1 };
-    for (int i = 0; i < vSequence.size(); i++) {
+    vector<float> vTexScaleV = { 0.5f, 0.5f, 0.5f, 0.5f };
+    vector<float> vTexTransformV = { 0.0f, -0.03f, -0.03f, -0.12f };
+
+    vector<int> vSequence = { 0, 2, 1, 3 };
+    for (int i = 0; i < 4; i++) {
         int x = vSequence[i];
         XMMATRIX mRotate = XMMatrixRotationY(XM_PIDIV2 * x - XM_PIDIV4 - m_fMargin);
-        float fScale = (x % 2 == 0) ? 1.005f : 1.0f; // 0,2前后略远 1,3右左略近(for blending) 
+        float fScale = (x % 2 == 0) ? 1.01f : 1.0f; // 0,2前后略远 1,3右左略近(for blending) 
         XMMATRIX mScale = XMMatrixScaling(fScale, 1.0f, fScale);
         constBuf.mWorldViewProjection = XMMatrixTranspose(mScale * mRotate * space.mWorld * space.mView * space.mProjection);
         constBuf.nTextured = 0;
+        constBuf.fTexScaleV = 1.0f;
+        constBuf.fTexTransformV = 0.0f;
+
         spImCtx->UpdateSubresource(m_spConstBuf.Get(), 0, nullptr, &constBuf, 0, 0);
         spImCtx->PSSetShaderResources(0, 1, m_vTex2D[x].spD3D11SRV.GetAddressOf());
 
@@ -119,6 +126,8 @@ void Arc4::Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const Spac
 
         // side
         constBuf.nTextured = 1;
+        constBuf.fTexScaleV = vTexScaleV[x];
+        constBuf.fTexTransformV = vTexTransformV[x];
         spImCtx->UpdateSubresource(m_spConstBuf.Get(), 0, nullptr, &constBuf, 0, 0);
         spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
         spImCtx->IASetVertexBuffers(0, 1, m_spSideVertices.GetAddressOf(), &stride, &offset);
@@ -140,12 +149,12 @@ void Arc4::init()
         float fz1 = XMScalarCos(fTheta);;
         float fx = m_fRadius * fx1;
         float fz = m_fRadius * fz1;
-        float fU = 0.65f * (fTheta - (XM_PIDIV4 + m_fMargin)) / (XM_PIDIV2 + m_fMargin) + 0.5f;
+        float fU = m_fUMax * (fTheta - (XM_PIDIV4 + m_fMargin)) / (XM_PIDIV2 + m_fMargin) + 0.5f;
 
         m_vBottomVertices.push_back({ XMFLOAT4(fx, 0.0f, fz, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.0f, 0.5f) });
 
         XMFLOAT4 xmf4ToCenter(-fx1, 0.0f, -fz1, 1.0f); // 指向柱心
-        m_vSideVertices.push_back({ XMFLOAT4(fx, fy0, fz, 1.0f), xmf4Color, xmf4ToCenter, XMFLOAT2(fU, (m_fHeight - fy0) / m_fHeight - 0.5f) });
+        m_vSideVertices.push_back({ XMFLOAT4(fx, fy0, fz, 1.0f), xmf4Color, xmf4ToCenter, XMFLOAT2(fU, (m_fHeight - fy0) / m_fHeight) });
         m_vSideVertices.push_back({ XMFLOAT4(fx, fy1, fz, 1.0f), xmf4Color, xmf4ToCenter, XMFLOAT2(fU, (m_fHeight - fy1) / m_fHeight) });
         if (i == 0) continue;
         // triangle list for bottom

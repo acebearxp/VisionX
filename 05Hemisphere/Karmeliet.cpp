@@ -4,6 +4,7 @@
 #include "OpticaFisheyeSin.h"
 
 using namespace std;
+using namespace DirectX;
 
 Karmeliet::Karmeliet()
 {
@@ -32,17 +33,15 @@ void Karmeliet::applyAlpha(float fxs, float fxt)
 	for (int y = 0; y < m_image.rows; y++) {
 		for (int x = 0; x < m_image.cols; x++) {
 			float fDelta = fabs(1.0f * (x - center) / center);
-			float fAlpha = (fDelta - fxt) / (fxs - fxt);
+			if (fDelta > fxs) {
+				// float fAlpha = (fDelta - fxt) / (fxs - fxt);
+				float fAlpha = 1.0f - ((fDelta - fxs) / (fxt - fxs)) * ((fDelta - fxs) / (fxt - fxs));
 
-			if (fAlpha > 1.0f) fAlpha = 1.0f;
-			if (fAlpha < 0.0f) fAlpha = 0.0f;
-			cv::Vec4b& color = m_image.at<cv::Vec4b>(y, x);
-			color[3] = static_cast<uchar>(fAlpha * 0xff);
+				if (fAlpha > 1.0f) fAlpha = 1.0f;
+				if (fAlpha < 0.0f) fAlpha = 0.0f;
 
-			if (y == 0) {
-				wchar_t buf[1024];
-				swprintf_s(buf, L"==> delta: %1.3f, alpha: %1.3f\n", fDelta, fAlpha);
-				OutputDebugString(buf);
+				cv::Vec4b& color = m_image.at<cv::Vec4b>(y, x);
+				color[3] = static_cast<uchar>(fAlpha * 0xff);
 			}
 		}
 	}
