@@ -96,6 +96,7 @@
     <ClCompile Include="Optica.cpp" />
     <ClCompile Include="OpticaFisheyeSin.cpp" />
     <ClCompile Include="Spatial.cpp" />
+    <ClCompile Include="Sphere4.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -115,6 +116,7 @@
     <ClInclude Include="OpticaFisheyeSin.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Spatial.h" />
+    <ClInclude Include="Sphere4.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="XWnd.h" />
   </ItemGroup>

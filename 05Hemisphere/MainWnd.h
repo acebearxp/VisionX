@@ -4,6 +4,7 @@
 #include "Cube.h"
 #include "Cylinder.h"
 #include "Arc4.h"
+#include "Sphere4.h"
 
 class CMainWnd final : public CXWnd
 {
@@ -47,6 +48,7 @@ private:
     std::unique_ptr<Cube> m_uptrCube;
     std::unique_ptr<Cylinder> m_uptrCylinder;
     std::unique_ptr<Arc4> m_uptrArc4;
+    std::unique_ptr<Sphere4> m_uptrSphere4;
 
     // world view projection
     Space m_space;
