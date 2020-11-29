@@ -90,7 +90,7 @@ void Sphere4::Draw(ComPtr<ID3D11DeviceContext>& spImCtx, const Space& space)
     const UINT offset = 0;
 
     vector<int> vSequence = { 0, 2, 1, 3 };
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 2; i++) {
         int x = vSequence[i];
         XMMATRIX mRotate = XMMatrixRotationY(XM_PIDIV2 * x);
         float fScale = (x % 2 == 0) ? 1.01f : 1.0f; // 0,2前后略远 1,3右左略近(for blending) 
@@ -98,11 +98,12 @@ void Sphere4::Draw(ComPtr<ID3D11DeviceContext>& spImCtx, const Space& space)
         constBuf.mWorldViewProjection = XMMatrixTranspose(mScale * mRotate * space.mWorld * space.mView * space.mProjection);
 
         // side
-        constBuf.nTextured = 0;
+        constBuf.nTextured = 1;
         spImCtx->UpdateSubresource(m_spConstBuf.Get(), 0, nullptr, &constBuf, 0, 0);
         spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         spImCtx->IASetVertexBuffers(0, 1, m_spSideVertices.GetAddressOf(), &stride, &offset);
         spImCtx->IASetIndexBuffer(m_spSideIndexes.Get(), DXGI_FORMAT_R32_UINT, 0);
+        spImCtx->PSSetShaderResources(0, 1, m_vTex2D[x].spD3D11SRV.GetAddressOf());
         spImCtx->DrawIndexed(static_cast<UINT>(m_vSideIndexes.size()), 0, 0);
     }
 }
@@ -113,20 +114,28 @@ void Sphere4::init()
 	XMFLOAT4 xmf4Up(0.0f, 1.0f, 0.0f, 1.0f);
 
 	float fStep = 2.0f * XM_PI / m_nStepsArc;
-	for (int i = 0; i < m_nStepsArc / 4; i++) {
+	for (int i = 0; i <= m_nStepsArc / 4; i++) {
 		if (i == 0) {
 			// 中心点
 			m_vSideVertices.push_back({ XMFLOAT4(0.0f, 0.0f, m_fRadius, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.5f, 0.5f) });
 		}
 		else {
 			float fPitch = fStep * i;
+            float fs = XMScalarSin(fPitch);
 			float fz = m_fRadius * XMScalarCos(fPitch);
-			float fr = m_fRadius * XMScalarSin(fPitch);
+			float fr = m_fRadius * fs;
 			for (int j = 0; j < m_nStepsArc; j++) {
 				float fTheta = fStep * j;
-				float fx = fr * XMScalarSin(fTheta);
-				float fy = fr * XMScalarCos(fTheta);
-				m_vSideVertices.push_back({ XMFLOAT4(fx, fy, fz, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.5f, 0.5f) });
+                float fsin = XMScalarSin(fTheta);
+                float fcos = XMScalarCos(fTheta);
+
+				float fx = fr * fsin;
+				float fy = fr * fcos;
+                
+                float fU = 0.5f + 0.5f * fsin * fs;
+                float fV = 0.5f - 0.5f * fcos * fs;
+
+				m_vSideVertices.push_back({ XMFLOAT4(fx, fy, fz, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(fU, fV) });
 				if (i == 1) {
 					// 最内圈
 					if (j == 0) {
