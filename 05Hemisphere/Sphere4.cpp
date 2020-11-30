@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "Sphere4.h"
 
 using namespace std;
@@ -18,7 +18,7 @@ HRESULT Sphere4::CreateD3DResources(ComPtr<ID3D11Device>& spD3D11Dev)
     auto fnCreateD3DBuf = [&spD3D11Dev](const vector<ColorPoint>& vVertices, const vector<UINT>& vIndexes,
         ComPtr<ID3D11Buffer>& spVertices, ComPtr<ID3D11Buffer>& spIndexes)->HRESULT
     {
-        // ���㻺����
+        // 顶点缓冲区
         D3D11_BUFFER_DESC descVertex;
         ZeroMemory(&descVertex, sizeof(D3D11_BUFFER_DESC));
         descVertex.ByteWidth = sizeof(ColorPoint) * static_cast<UINT>(vVertices.size());
@@ -33,7 +33,7 @@ HRESULT Sphere4::CreateD3DResources(ComPtr<ID3D11Device>& spD3D11Dev)
         HRESULT hr = spD3D11Dev->CreateBuffer(&descVertex, &xinit, &spVertices);
         if (FAILED(hr)) return hr;
 
-        // ����������
+        // 索引缓冲区
         if (vIndexes.size() > 0) {
             D3D11_BUFFER_DESC descCubeIndex;
             ZeroMemory(&descCubeIndex, sizeof(D3D11_BUFFER_DESC));
@@ -54,10 +54,10 @@ HRESULT Sphere4::CreateD3DResources(ComPtr<ID3D11Device>& spD3D11Dev)
 
     // texture
     vector<string> vPaths = {
-        R"(D:/VisionX/01Hello/front.jpg)", // Pi*0/2
-        R"(D:/VisionX/01Hello/right.jpg)", // Pi*1/2
-        R"(D:/VisionX/01Hello/back.jpg)",  // Pi*2/2
-        R"(D:/VisionX/01Hello/left.jpg)"   // Pi*3/2
+        R"(D:/VisionX/05Hemisphere/carset2/set2/1front.jpg)", // Pi*0/2
+        R"(D:/VisionX/05Hemisphere/carset2/set2/2right.jpg)", // Pi*1/2
+        R"(D:/VisionX/05Hemisphere/carset2/set2/3back.jpg)",  // Pi*2/2
+        R"(D:/VisionX/05Hemisphere/carset2/set2/4left.jpg)"   // Pi*3/2
     };
     for (const string& strPath : vPaths) {
         Texture2DResource tex2DRes;
@@ -93,7 +93,7 @@ void Sphere4::Draw(ComPtr<ID3D11DeviceContext>& spImCtx, const Space& space)
     for (int i = 0; i < 2; i++) {
         int x = vSequence[i];
         XMMATRIX mRotate = XMMatrixRotationY(XM_PIDIV2 * x);
-        float fScale = (x % 2 == 0) ? 1.01f : 1.0f; // 0,2ǰ����Զ 1,3�����Խ�(for blending) 
+        float fScale = (x % 2 == 0) ? 1.01f : 1.0f; // 0,2前后略远 1,3右左略近(for blending) 
         XMMATRIX mScale = XMMatrixScaling(fScale, 1.0f, fScale);
         constBuf.mWorldViewProjection = XMMatrixTranspose(mScale * mRotate * space.mWorld * space.mView * space.mProjection);
 
@@ -116,7 +116,7 @@ void Sphere4::init()
 	float fStep = 2.0f * XM_PI / m_nStepsArc;
 	for (int i = 0; i <= m_nStepsArc / 4; i++) {
 		if (i == 0) {
-			// ���ĵ�
+			// 中心点
 			m_vSideVertices.push_back({ XMFLOAT4(0.0f, 0.0f, m_fRadius, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(0.5f, 0.5f) });
 		}
 		else {
@@ -132,12 +132,17 @@ void Sphere4::init()
 				float fx = fr * fsin;
 				float fy = fr * fcos;
                 
+                /* 考虑鱼眼(sin模型)变形;而普通标准镜头是tan模型 fr2 = fz * tanf(fPitch)
+                   float fr2 = fz * XMScalarSin(fPitch);
+                   float fU = 0.5f + 0.5f * fr2 * fsin / fz;
+                   float fV = 0.5f - 0.5f * fr2 * fcos * 1.5f / fz;
+                   化简后如下: */
                 float fU = 0.5f + 0.5f * fsin * fs;
-                float fV = 0.5f - 0.5f * fcos * fs;
+                float fV = 0.5f - 0.5f * fcos * fs * 1.5f; // 垂直方向上视张角120度,水平180度,所以垂直方向上有个1.5f的系数
 
 				m_vSideVertices.push_back({ XMFLOAT4(fx, fy, fz, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(fU, fV) });
 				if (i == 1) {
-					// ����Ȧ
+					// 最内圈
 					if (j == 0) {
 						m_vSideIndexes.push_back(0);
 						m_vSideIndexes.push_back(m_nStepsArc);
@@ -150,7 +155,7 @@ void Sphere4::init()
 					}
 				}
 				else {
-					// ��Ȧ
+					// 外圈
                     if (j == 0) {
                         m_vSideIndexes.push_back(m_nStepsArc * (i - 1));
                         m_vSideIndexes.push_back(m_nStepsArc * i);

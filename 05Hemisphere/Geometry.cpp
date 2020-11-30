@@ -82,13 +82,13 @@ HRESULT Geometry::createSamplerState(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D
 {
     D3D11_SAMPLER_DESC descSampler = {
         D3D11_FILTER_MIN_MAG_MIP_LINEAR,
-        D3D11_TEXTURE_ADDRESS_CLAMP,
-        D3D11_TEXTURE_ADDRESS_CLAMP,
-        D3D11_TEXTURE_ADDRESS_CLAMP,
+        D3D11_TEXTURE_ADDRESS_BORDER,
+        D3D11_TEXTURE_ADDRESS_BORDER,
+        D3D11_TEXTURE_ADDRESS_BORDER,
         0.0f,
         1,
         D3D11_COMPARISON_NEVER,
-        {0.0f, 0.0f, 0.0f, 0.0f},
+        {0.1f, 0.1f, 0.1f, 1.0f},
         -FLT_MAX,
         +FLT_MAX
     };
