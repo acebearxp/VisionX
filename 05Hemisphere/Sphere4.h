@@ -22,6 +22,8 @@ private:
 
     // texture
     std::vector<Texture2DResource> m_vTex2D;
+    std::vector<DirectX::XMFLOAT3> m_vCamPos;
+    std::vector<float> m_vPitch;
 
     void init();
 };

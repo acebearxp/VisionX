@@ -178,11 +178,9 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     m_space.mWorld = XMMatrixIdentity();
 
     // 摄像机位
-    XMVECTOR Eye = XMVectorSet(3.0f, 8.0f, -30.0f, 0.0f);
-    // XMVECTOR Eye = XMVectorSet(0.0f, 8.0f, -10.0f, 0.0f);
-    // XMVECTOR Eye = XMVectorSet(30.0f, 30.0f, -80.0f, 0.0f);
-    XMVECTOR At = XMVectorSet(0.0f, 6.0f, 0.0f, 0.0f);
-    XMVECTOR Up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+    XMVECTOR Eye = XMVectorSet(0.0f, 8.0f, -30.0f, 1.0f);
+    XMVECTOR At = XMVectorSet(0.0f, 2.0f, 0.0f, 1.0f);
+    XMVECTOR Up = XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f);
     m_space.mView = XMMatrixLookAtLH(Eye, At, Up);
 
     OnSize(hwnd, 0, lpCreateStruct->cx, lpCreateStruct->cy);
