@@ -55,15 +55,15 @@ HRESULT Sphere4::CreateD3DResources(ComPtr<ID3D11Device>& spD3D11Dev)
 
     // texture
     vector<string> vPaths = {
-        R"(D:/VisionX/05Hemisphere/carset2/set1/1front.jpg)", // Pi*0/2
-        R"(D:/VisionX/05Hemisphere/carset2/set1/2right.jpg)", // Pi*1/2
-        R"(D:/VisionX/05Hemisphere/carset2/set1/3back.jpg)",  // Pi*2/2
-        R"(D:/VisionX/05Hemisphere/carset2/set1/4left.jpg)"   // Pi*3/2
+        R"(D:/VisionX/05Hemisphere/carset2/set2/1front.jpg)", // Pi*0/2
+        R"(D:/VisionX/05Hemisphere/carset2/set2/2right.jpg)", // Pi*1/2
+        R"(D:/VisionX/05Hemisphere/carset2/set2/3back.jpg)",  // Pi*2/2
+        R"(D:/VisionX/05Hemisphere/carset2/set2/4left.jpg)"   // Pi*3/2
     };
     for (const string& strPath : vPaths) {
         Karmeliet kaImage;
         kaImage.LoadTexture(strPath);
-        kaImage.applyAlpha(0.4f, 0.85f);
+        kaImage.applyAlpha(0.3f, 0.6f);
 
         Texture2DResource tex2DRes;
         hr = loadTexture2D(spD3D11Dev, kaImage.GetData(), tex2DRes.spD3D11Tex2D, tex2DRes.spD3D11SRV);
@@ -73,34 +73,32 @@ HRESULT Sphere4::CreateD3DResources(ComPtr<ID3D11Device>& spD3D11Dev)
     }
     // 位置
     m_vCamPos = {
-        {  836.0f,    0.0f, 1082.0f }, // front
-        { 2597.0f,  972.0f, 1539.0f }, // right
-        { 5540.0f,    0.0f, 1534.0f }, // back
-        { 2556.0f, -997.0f, 1534.0f }  // left
+        {   0.0f,   0.0f,   2.5f }, // front
+        {   1.0f,   0.0f,   0.0f }, // right
+        {   0.0f,   0.0f,  -2.5f }, // back
+        {  -1.0f,   0.0f,   0.0f }  // left
     };
-    XMFLOAT3 origin = {
-        (m_vCamPos[0].x + m_vCamPos[2].x) / 2.0f,
-        (m_vCamPos[1].y + m_vCamPos[3].y) / 2.0f,
-        m_vCamPos[0].z
+    m_vCamPos = {
+        { 0.0f, 0.0f, 0.0f }, // front
+        { 0.0f, 0.0f, 0.0f }, // right
+        { 0.0f, 0.0f, 0.0f }, // back
+        { 0.0f, 0.0f, 0.0f }  // left
     };
-    for (XMFLOAT3& pos : m_vCamPos) {
-        // 以车辆正中心为坐标原点
-        XMFLOAT3 pos3;
-        XMVECTOR pos2 = XMVectorSubtract(XMLoadFloat3(&pos), XMLoadFloat3(&origin));
-        pos2 = XMVectorScale(pos2, 0.01f);
-        XMStoreFloat3(&pos3, pos2);
-        // 坐标系定义不同,转换一下
-        pos.x =  pos3.y;
-        pos.y =  pos3.z;
-        pos.z = -pos3.x;
-    }
 
     // 下倾角
-    // m_vPitch = { 17.0f, 42.0f, 31.0f, 44.0f };
-    m_vPitch = { 17.0f, 20.0f, 17.0f, 20.0f };
+    m_vPitch = { 12.0f, 20.0f, 17.0f, 22.0f };
+    // m_vPitch = { 0.0f, 0.0f, 0.0f, 0.0f };
     for (float& fPitch : m_vPitch) {
         fPitch = XM_PI * fPitch / 180.0f; // 弧度
     }
+
+    // depth state
+    D3D11_DEPTH_STENCIL_DESC descDS;
+    descDS.DepthEnable = FALSE;
+    descDS.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    descDS.DepthFunc = D3D11_COMPARISON_LESS;
+    descDS.StencilEnable = FALSE;
+    spD3D11Dev->CreateDepthStencilState(&descDS, m_spDepthStencilState.GetAddressOf());
 
     return S_OK;
 }
@@ -120,18 +118,21 @@ void Sphere4::Draw(ComPtr<ID3D11DeviceContext>& spImCtx, const Space& space)
     spImCtx->IASetInputLayout(m_spIL.Get());
     // sampler state
     spImCtx->PSSetSamplers(0, 1, m_spSamplerState.GetAddressOf());
+    // depth state
+    UINT nStencilRef;
+    ComPtr<ID3D11DepthStencilState> spStateDS;
+    spImCtx->OMGetDepthStencilState(spStateDS.GetAddressOf(), &nStencilRef);
+    spImCtx->OMSetDepthStencilState(m_spDepthStencilState.Get(), 0);
 
     const UINT stride = sizeof(ColorPoint);
     const UINT offset = 0;
 
     vector<int> vSequence = { 0, 2, 1, 3 };
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < vSequence.size(); i++) {
         int x = vSequence[i];
         XMMATRIX mRotate = XMMatrixRotationX(m_vPitch[x]) * XMMatrixRotationY(XM_PIDIV2 * x);
-        float fScale = (x % 2 == 0) ? 1.02f : 1.0f; // 0,2前后略远 1,3右左略近(for blending) 
-        XMMATRIX mScale = XMMatrixScaling(fScale, 1.0f, fScale);
         XMMATRIX mMove = XMMatrixTranslation(m_vCamPos[x].x, m_vCamPos[x].y, m_vCamPos[x].z);
-        constBuf.mWorldViewProjection = XMMatrixTranspose(mRotate * mScale * space.mWorld * space.mView * space.mProjection);
+        constBuf.mWorldViewProjection = XMMatrixTranspose(mRotate * mMove * space.mWorld * space.mView * space.mProjection);
 
         // side
         constBuf.nTextured = 1;
@@ -142,6 +143,9 @@ void Sphere4::Draw(ComPtr<ID3D11DeviceContext>& spImCtx, const Space& space)
         spImCtx->PSSetShaderResources(0, 1, m_vTex2D[x].spD3D11SRV.GetAddressOf());
         spImCtx->DrawIndexed(static_cast<UINT>(m_vSideIndexes.size()), 0, 0);
     }
+
+    // restore state
+    spImCtx->OMSetDepthStencilState(spStateDS.Get(), nStencilRef);
 }
 
 void Sphere4::init()
@@ -173,7 +177,7 @@ void Sphere4::init()
                    float fU = 0.5f + 0.5f * fr2 * fsin / fz;
                    float fV = 0.5f - 0.5f * fr2 * fcos * 1.5f / fz;
                    化简后如下: */
-                float fU = 0.5f + 0.5f * fsin * fs;
+                float fU = 0.5f + 0.5f * fsin * fs * 0.7f; // 0.7f是水平补偿系数,经验值
                 float fV = 0.5f - 0.5f * fcos * fs * 1.5f; // 垂直方向上视张角120度,水平180度,所以垂直方向上有个1.5f的系数
 
 				m_vSideVertices.push_back({ XMFLOAT4(fx, fy, fz, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(fU, fV) });
@@ -196,7 +200,7 @@ void Sphere4::init()
                         m_vSideIndexes.push_back(m_nStepsArc * (i - 1));
                         m_vSideIndexes.push_back(m_nStepsArc * i);
                         m_vSideIndexes.push_back(m_nStepsArc * (i - 1) + 1);
-
+                        
                         m_vSideIndexes.push_back(m_nStepsArc * (i - 1));
                         m_vSideIndexes.push_back(m_nStepsArc * (i - 1) + 1);
                         m_vSideIndexes.push_back(m_nStepsArc * (i - 2) + 1);

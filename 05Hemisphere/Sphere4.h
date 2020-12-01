@@ -10,7 +10,7 @@ public:
     void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const Space& space) override;
 private:
     // 侧面球半径
-    float m_fRadius = 20.0f;
+    float m_fRadius = 25.0f;
 
     int m_nStepsArc = 36; // 圆分割步数
 
@@ -24,6 +24,9 @@ private:
     std::vector<Texture2DResource> m_vTex2D;
     std::vector<DirectX::XMFLOAT3> m_vCamPos;
     std::vector<float> m_vPitch;
+
+    // state
+    Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_spDepthStencilState;
 
     void init();
 };
