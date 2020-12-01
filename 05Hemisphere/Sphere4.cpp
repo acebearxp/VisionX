@@ -63,6 +63,7 @@ HRESULT Sphere4::CreateD3DResources(ComPtr<ID3D11Device>& spD3D11Dev)
     for (const string& strPath : vPaths) {
         Karmeliet kaImage;
         kaImage.LoadTexture(strPath);
+        // kaImage.applyAlpha(0.3f, 1.0f);
         kaImage.applyAlpha(0.3f, 0.6f);
 
         Texture2DResource tex2DRes;
@@ -73,21 +74,14 @@ HRESULT Sphere4::CreateD3DResources(ComPtr<ID3D11Device>& spD3D11Dev)
     }
     // 位置
     m_vCamPos = {
-        {   0.0f,   0.0f,   2.5f }, // front
-        {   1.0f,   0.0f,   0.0f }, // right
-        {   0.0f,   0.0f,  -2.5f }, // back
-        {  -1.0f,   0.0f,   0.0f }  // left
-    };
-    m_vCamPos = {
-        { 0.0f, 0.0f, 0.0f }, // front
-        { 0.0f, 0.0f, 0.0f }, // right
-        { 0.0f, 0.0f, 0.0f }, // back
-        { 0.0f, 0.0f, 0.0f }  // left
+        {   0.0f,   0.0f,   1.7f }, // front
+        {   1.0f,   0.5f,   0.0f }, // right
+        {   0.0f,   0.0f,  -3.0f }, // back
+        {  -1.0f,   0.5f,   0.0f }  // left
     };
 
     // 下倾角
-    m_vPitch = { 12.0f, 20.0f, 17.0f, 22.0f };
-    // m_vPitch = { 0.0f, 0.0f, 0.0f, 0.0f };
+    m_vPitch = { 10.0f, 20.0f, 21.0f, 22.0f };
     for (float& fPitch : m_vPitch) {
         fPitch = XM_PI * fPitch / 180.0f; // 弧度
     }
@@ -177,8 +171,16 @@ void Sphere4::init()
                    float fU = 0.5f + 0.5f * fr2 * fsin / fz;
                    float fV = 0.5f - 0.5f * fr2 * fcos * 1.5f / fz;
                    化简后如下: */
-                float fU = 0.5f + 0.5f * fsin * fs * 0.7f; // 0.7f是水平补偿系数,经验值
-                float fV = 0.5f - 0.5f * fcos * fs * 1.5f; // 垂直方向上视张角120度,水平180度,所以垂直方向上有个1.5f的系数
+                // float fU = 0.5f + 0.5f * fsin * fs * 1.0f; // 0.7f是水平补偿系数,经验值
+                // float fV = 0.5f - 0.5f * fcos * fs * 1.5f; // 垂直方向上视张角120度,水平180度,所以垂直方向上有个1.5f的系数
+
+                /* 鱼眼(θ)模型*/
+                float fU = 0.5f + 0.5f * fPitch * fsin * 0.6f;
+                float fV = 0.5f - 0.5f * fPitch * fcos * 1.5f;
+
+                /* 考虑鱼眼(2*sin(θ/2)模型)*/
+                // float fU = 0.5f + 0.5f * 2.0f * XMScalarSin(fPitch / 2.0f) * fsin * 0.6f;
+                // float fV = 0.5f - 0.5f * 2.0f * XMScalarSin(fPitch / 2.0f) * fcos * 1.5f;
 
 				m_vSideVertices.push_back({ XMFLOAT4(fx, fy, fz, 1.0f), xmf4Color, xmf4Up, XMFLOAT2(fU, fV) });
 				if (i == 1) {

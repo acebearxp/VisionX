@@ -88,7 +88,7 @@ HRESULT Geometry::createSamplerState(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D
         0.0f,
         1,
         D3D11_COMPARISON_NEVER,
-        {0.1f, 0.1f, 0.1f, 1.0f},
+        {0.1f, 0.1f, 0.1f, 0.0f},
         -FLT_MAX,
         +FLT_MAX
     };

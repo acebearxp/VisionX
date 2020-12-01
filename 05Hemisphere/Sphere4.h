@@ -10,7 +10,7 @@ public:
     void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const Space& space) override;
 private:
     // 侧面球半径
-    float m_fRadius = 25.0f;
+    float m_fRadius = 24.0f;
 
     int m_nStepsArc = 36; // 圆分割步数
 
