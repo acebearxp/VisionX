@@ -87,7 +87,7 @@ HRESULT Sphere4::CreateD3DResources(ComPtr<ID3D11Device>& spD3D11Dev)
     }
 
     // depth state
-    D3D11_DEPTH_STENCIL_DESC descDS;
+    D3D11_DEPTH_STENCIL_DESC descDS = { 0 };
     descDS.DepthEnable = FALSE;
     descDS.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
     descDS.DepthFunc = D3D11_COMPARISON_LESS;

@@ -61,7 +61,11 @@ void CMainWnd::Render()
     m_spImCtx->OMSetBlendState(m_spBlendState.Get(), nullptr, UINT_MAX);
 
     // rotating
-    m_space.mWorld = XMMatrixRotationY((GetTickCount64() - m_u64Begin) / 3000.0f);
+    LARGE_INTEGER i64Now;
+    QueryPerformanceCounter(&i64Now);
+
+    const float fSpeed = 0.05f * 2.0f * XM_PI; // rad/s
+    m_space.mWorld = XMMatrixRotationY(fSpeed * (i64Now.QuadPart - m_i64Begin.QuadPart) / m_i64Freq.QuadPart);
     //m_space.mWorld = XMMatrixRotationY(0.0f);
 
     m_spImCtx->RSSetState(m_spRSSolid.Get());
@@ -71,6 +75,15 @@ void CMainWnd::Render()
 
     m_spImCtx->RSSetState(m_spRSWireframe.Get());
     m_uptrCube->Draw(m_spImCtx, m_space);
+
+    // FPS
+    if (m_uCountFPS % 32 == 0) {
+        m_fFPS = 1.0f * m_uCountFPS * m_i64Freq.QuadPart / (i64Now.QuadPart - m_i64Count.QuadPart);
+        m_i64Count = i64Now;
+        m_uCountFPS = 0;
+    }
+    m_uCountFPS++;
+    drawFPS(m_fFPS);
 
     HRESULT hr = m_spSwapChain->Present(1, 0);
 }
@@ -95,6 +108,11 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     BOOL bRet = CXWnd::OnCreate(hwnd, lpCreateStruct);
     if (!bRet) return bRet;
 
+    // Gdiplus
+    Gdiplus::FontFamily ffSong(L"宋体");
+    m_uptrFontSong = unique_ptr<Gdiplus::Font>(new Gdiplus::Font(&ffSong, 9.0));
+    m_uptrBrushText = unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::Crimson));
+
     // 创建D3D设备
     UINT uFlagDXGI = 0, uFlag = 0;
 #ifdef _DEBUG
@@ -118,7 +136,7 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     // 创建交换链
     DXGI_SWAP_CHAIN_DESC1 desc;
     ZeroMemory(&desc, sizeof(DXGI_SWAP_CHAIN_DESC1));
-    desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
     desc.Stereo = FALSE;
     desc.SampleDesc.Count = 1;
     desc.SampleDesc.Quality = 0;
@@ -148,7 +166,7 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     if (FAILED(hr)) return FALSE;
 
     // blend
-    D3D11_RENDER_TARGET_BLEND_DESC descRT;
+    D3D11_RENDER_TARGET_BLEND_DESC descRT = { 0 };
     descRT.BlendEnable = TRUE;
     descRT.SrcBlend = D3D11_BLEND_SRC_ALPHA;
     descRT.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
@@ -186,7 +204,10 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     OnSize(hwnd, 0, lpCreateStruct->cx, lpCreateStruct->cy);
 
     // 开始时间标定
-    m_u64Begin = GetTickCount64();
+    QueryPerformanceFrequency(&m_i64Freq);
+    QueryPerformanceCounter(&m_i64Begin);
+    m_i64Count = m_i64Begin;
+    m_uCountFPS = 0;
 
     return bRet;
 }
@@ -221,7 +242,7 @@ void CMainWnd::OnSize(HWND hwnd, UINT state, int cx, int cy)
     if (cy == 0) cy = 1;
 
     // resize
-    HRESULT hr = m_spSwapChain->ResizeBuffers(0, cx, cy, DXGI_FORMAT_UNKNOWN, 0);
+    HRESULT hr = m_spSwapChain->ResizeBuffers(0, cx, cy, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_GDI_COMPATIBLE);
     // 设定渲染目标
     ComPtr<ID3D11Texture2D> spBackBuffer;
     hr = m_spSwapChain->GetBuffer(0, IID_PPV_ARGS(&spBackBuffer));
@@ -248,7 +269,7 @@ void CMainWnd::OnSize(HWND hwnd, UINT state, int cx, int cy)
     hr = m_spD3D11->CreateDepthStencilView(m_spZ.Get(), &descZView, &m_spZView);
 
     // 设定可见区域
-    D3D11_VIEWPORT viewPort;
+    D3D11_VIEWPORT viewPort = { 0 };
     viewPort.TopLeftX = 0.0f;
     viewPort.TopLeftY = 0.0f;
     viewPort.Width = static_cast<float>(cx);
@@ -284,7 +305,7 @@ void CMainWnd::OnGetMinMaxInfo(HWND hwnd, LPMINMAXINFO lpMinMaxInfo)
 
 RECT CMainWnd::calcDefaultWindowRect()
 {
-    RECT rc;
+    RECT rc = { 0 };
 
     // 枚举显示器,默认显示在较大的显示器上
     EnumDisplayMonitors(NULL, nullptr,
@@ -318,4 +339,23 @@ RECT CMainWnd::calcDefaultWindowRect()
     fnAdjust(rc.top, rc.bottom, maxHeight);
 
     return rc;
+}
+
+void CMainWnd::drawFPS(float fFPS)
+{
+    HDC hdc;
+
+    ComPtr<ID3D11Texture2D> spBackBuffer;
+    HRESULT hr = m_spSwapChain->GetBuffer(0, IID_PPV_ARGS(&spBackBuffer));
+
+    ComPtr<IDXGISurface1> spDXGISurface;
+    hr = spBackBuffer->QueryInterface(IID_PPV_ARGS(&spDXGISurface));
+    hr = spDXGISurface->GetDC(FALSE, &hdc);
+
+    wchar_t buf[64];
+    swprintf_s(buf, L"FPS: %6.2f", fFPS);
+    Gdiplus::Graphics g(hdc);
+    g.DrawString(buf, -1, m_uptrFontSong.get(), Gdiplus::PointF(4.0f, 4.0f), m_uptrBrushText.get());
+
+    hr = spDXGISurface->ReleaseDC(nullptr);
 }
