@@ -71,9 +71,14 @@ void CMainWnd::Render()
     m_spImCtx->RSSetState(m_spRSSolid.Get());
     // m_spImCtx->RSSetState(m_spRSWireframe.Get());
     // m_uptrArc4->Draw(m_spImCtx, m_space);
+    m_uptrSphere4->EnableTexture(1);
     m_uptrSphere4->Draw(m_spImCtx, m_space);
 
     m_spImCtx->RSSetState(m_spRSWireframe.Get());
+    m_uptrSphere4->EnableTexture(0);
+    m_uptrSphere4->Draw(m_spImCtx, m_space);
+
+    // m_spImCtx->RSSetState(m_spRSWireframe.Get());
     m_uptrCube->Draw(m_spImCtx, m_space);
 
     // FPS

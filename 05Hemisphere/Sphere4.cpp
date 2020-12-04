@@ -129,7 +129,7 @@ void Sphere4::Draw(ComPtr<ID3D11DeviceContext>& spImCtx, const Space& space)
         constBuf.mWorldViewProjection = XMMatrixTranspose(mRotate * mMove * space.mWorld * space.mView * space.mProjection);
 
         // side
-        constBuf.nTextured = 1;
+        constBuf.nTextured = m_nTextured;
         spImCtx->UpdateSubresource(m_spConstBuf.Get(), 0, nullptr, &constBuf, 0, 0);
         spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         spImCtx->IASetVertexBuffers(0, 1, m_spSideVertices.GetAddressOf(), &stride, &offset);
@@ -144,7 +144,7 @@ void Sphere4::Draw(ComPtr<ID3D11DeviceContext>& spImCtx, const Space& space)
 
 void Sphere4::init()
 {
-	XMFLOAT4 xmf4Color = XMFLOAT4(0.8f, 0.6f, 0.0f, 1.0f);
+	XMFLOAT4 xmf4Color = XMFLOAT4(0.8f, 0.6f, 0.0f, 0.2f);
 	XMFLOAT4 xmf4Up(0.0f, 1.0f, 0.0f, 1.0f);
 
 	float fStep = 2.0f * XM_PI / m_nStepsArc;
