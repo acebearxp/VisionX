@@ -70,15 +70,16 @@ void CMainWnd::Render()
 
     m_spImCtx->RSSetState(m_spRSSolid.Get());
     // m_spImCtx->RSSetState(m_spRSWireframe.Get());
+    // m_uptrCylinder->Draw(m_spImCtx, m_space);
     // m_uptrArc4->Draw(m_spImCtx, m_space);
     m_uptrSphere4->EnableTexture(1);
     m_uptrSphere4->Draw(m_spImCtx, m_space);
 
-    m_spImCtx->RSSetState(m_spRSWireframe.Get());
-    m_uptrSphere4->EnableTexture(0);
-    m_uptrSphere4->Draw(m_spImCtx, m_space);
-
     // m_spImCtx->RSSetState(m_spRSWireframe.Get());
+    // m_uptrSphere4->EnableTexture(0);
+    // m_uptrSphere4->Draw(m_spImCtx, m_space);
+
+    m_spImCtx->RSSetState(m_spRSWireframe.Get());
     m_uptrCube->Draw(m_spImCtx, m_space);
 
     // FPS
@@ -190,6 +191,9 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     // 几何体
     m_uptrCube = unique_ptr<Cube>(new Cube());
     m_uptrCube->CreateD3DResources(m_spD3D11);
+
+    m_uptrCylinder = unique_ptr<Cylinder>(new Cylinder());
+    m_uptrCylinder->CreateD3DResources(m_spD3D11);
 
     m_uptrArc4 = unique_ptr<Arc4>(new Arc4());
     m_uptrArc4->CreateD3DResources(m_spD3D11);
