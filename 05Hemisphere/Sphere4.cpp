@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "Sphere4.h"
 #include "Karmeliet.h"
+#include <direct.h>
 
 using namespace std;
 using namespace Microsoft::WRL;
@@ -54,11 +55,13 @@ HRESULT Sphere4::CreateD3DResources(ComPtr<ID3D11Device>& spD3D11Dev)
     if (FAILED(hr)) return hr;
 
     // texture
+    char buf[_MAX_PATH];
+    string strPath(_getcwd(buf, _MAX_PATH));
     vector<string> vPaths = {
-        R"(D:/VisionX/05Hemisphere/carset2/set2/1front.jpg)", // Pi*0/2
-        R"(D:/VisionX/05Hemisphere/carset2/set2/2right.jpg)", // Pi*1/2
-        R"(D:/VisionX/05Hemisphere/carset2/set2/3back.jpg)",  // Pi*2/2
-        R"(D:/VisionX/05Hemisphere/carset2/set2/4left.jpg)"   // Pi*3/2
+        strPath + R"(/carset2/set2/1front.jpg)", // Pi*0/2
+        strPath + R"(/carset2/set2/2right.jpg)", // Pi*1/2
+        strPath + R"(/carset2/set2/3back.jpg)",  // Pi*2/2
+        strPath + R"(/carset2/set2/4left.jpg)"   // Pi*3/2
     };
     for (const string& strPath : vPaths) {
         Karmeliet kaImage;
