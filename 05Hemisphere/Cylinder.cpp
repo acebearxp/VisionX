@@ -1,5 +1,6 @@
 ﻿#include "stdafx.h"
 #include "Cylinder.h"
+#include <direct.h>
 
 using namespace std;
 using namespace DirectX;
@@ -56,11 +57,13 @@ HRESULT Cylinder::CreateD3DResources(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D
     if (FAILED(hr)) return hr;
 
     // texture
+    char buf[_MAX_PATH];
+    string strPath(_getcwd(buf, _MAX_PATH));
     vector<string> vPaths = {
-        R"(D:/VisionX/01Hello/front.jpg)", // Pi*0/2
-        R"(D:/VisionX/01Hello/right.jpg)", // Pi*1/2
-        R"(D:/VisionX/01Hello/back.jpg)",  // Pi*2/2
-        R"(D:/VisionX/01Hello/left.jpg)"   // Pi*3/2
+        strPath + R"(\carset2\set1\1front.jpg)", // Pi*0/2
+        strPath + R"(\carset2\set1\2right.jpg)", // Pi*1/2
+        strPath + R"(\carset2\set1\3back.jpg)",  // Pi*2/2
+        strPath + R"(\carset2\set1\4left.jpg)"   // Pi*3/2
     };
     for (const string& strPath : vPaths) {
         Texture2DResource tex2DRes;

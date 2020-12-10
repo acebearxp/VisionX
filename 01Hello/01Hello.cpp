@@ -1,5 +1,6 @@
 // 01Hello.cpp : OpenCV installation verifying
 
+#include <direct.h>
 #include <iostream>
 #include <opencv2/opencv.hpp>
 
@@ -13,9 +14,13 @@ using namespace std;
 
 int main()
 {
+    char buf[_MAX_PATH];
+    _getcwd(buf, _MAX_PATH);
+
     string strTitleIn("Sample");
     string strTitleOut("OutX");
-    string strPath(R"(D:/VisionX/01Hello/front.jpg)");
+    string strPath(buf);
+    strPath += R"(/front.jpg)";
 
     cv::Mat image = cv::imread(strPath);
     cv::namedWindow(strTitleIn, cv::WINDOW_AUTOSIZE);

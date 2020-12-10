@@ -6,13 +6,16 @@ class Sphere4 : public Geometry
 public:
     Sphere4();
 
+    void EnableTexture(int nTextured) { m_nTextured = nTextured; }
+
     HRESULT CreateD3DResources(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev) override;
     void Draw(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& spImCtx, const Space& space) override;
 private:
     // 侧面球半径
-    float m_fRadius = 25.0f;
+    float m_fRadius = 24.0f;
 
     int m_nStepsArc = 36; // 圆分割步数
+    int m_nTextured = 1;
 
     // 侧面
     std::vector<ColorPoint> m_vSideVertices;

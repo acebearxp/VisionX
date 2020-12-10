@@ -1,6 +1,7 @@
 ﻿#include "stdafx.h"
 #include "Sphere4.h"
 #include "Karmeliet.h"
+#include <direct.h>
 
 using namespace std;
 using namespace Microsoft::WRL;
@@ -54,11 +55,13 @@ HRESULT Sphere4::CreateD3DResources(ComPtr<ID3D11Device>& spD3D11Dev)
     if (FAILED(hr)) return hr;
 
     // texture
+    char buf[_MAX_PATH];
+    string strPath(_getcwd(buf, _MAX_PATH));
     vector<string> vPaths = {
-        R"(D:/VisionX/05Hemisphere/carset2/set1/1front.jpg)", // Pi*0/2
-        R"(D:/VisionX/05Hemisphere/carset2/set1/2right.jpg)", // Pi*1/2
-        R"(D:/VisionX/05Hemisphere/carset2/set1/3back.jpg)",  // Pi*2/2
-        R"(D:/VisionX/05Hemisphere/carset2/set1/4left.jpg)"   // Pi*3/2
+        strPath + R"(/carset2/set2/1front.jpg)", // Pi*0/2
+        strPath + R"(/carset2/set2/2right.jpg)", // Pi*1/2
+        strPath + R"(/carset2/set2/3back.jpg)",  // Pi*2/2
+        strPath + R"(/carset2/set2/4left.jpg)"   // Pi*3/2
     };
     for (const string& strPath : vPaths) {
         Karmeliet kaImage;
@@ -74,27 +77,20 @@ HRESULT Sphere4::CreateD3DResources(ComPtr<ID3D11Device>& spD3D11Dev)
     }
     // 位置
     m_vCamPos = {
-        {   0.0f,   0.0f,   2.5f }, // front
+        {   0.0f,   0.0f,   1.7f }, // front
         {   1.0f,   0.5f,   0.0f }, // right
-        {   0.0f,   0.0f,  -2.5f }, // back
+        {   0.0f,   0.0f,  -3.0f }, // back
         {  -1.0f,   0.5f,   0.0f }  // left
     };
-    // m_vCamPos = {
-    //     { 0.0f, 0.0f, 0.0f }, // front
-    //     { 0.0f, 0.0f, 0.0f }, // right
-    //     { 0.0f, 0.0f, 0.0f }, // back
-    //     { 0.0f, 0.0f, 0.0f }  // left
-    // };
 
     // 下倾角
-    m_vPitch = { 11.0f, 20.0f, 19.0f, 22.0f };
-    // m_vPitch = { 0.0f, 0.0f, 0.0f, 0.0f };
+    m_vPitch = { 10.0f, 20.0f, 21.0f, 22.0f };
     for (float& fPitch : m_vPitch) {
         fPitch = XM_PI * fPitch / 180.0f; // 弧度
     }
 
     // depth state
-    D3D11_DEPTH_STENCIL_DESC descDS;
+    D3D11_DEPTH_STENCIL_DESC descDS = { 0 };
     descDS.DepthEnable = FALSE;
     descDS.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
     descDS.DepthFunc = D3D11_COMPARISON_LESS;
@@ -137,7 +133,7 @@ void Sphere4::Draw(ComPtr<ID3D11DeviceContext>& spImCtx, const Space& space)
         constBuf.mWorldViewProjection = XMMatrixTranspose(mRotate * mMove * space.mWorld * space.mView * space.mProjection);
 
         // side
-        constBuf.nTextured = 1;
+        constBuf.nTextured = m_nTextured;
         spImCtx->UpdateSubresource(m_spConstBuf.Get(), 0, nullptr, &constBuf, 0, 0);
         spImCtx->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         spImCtx->IASetVertexBuffers(0, 1, m_spSideVertices.GetAddressOf(), &stride, &offset);
@@ -152,7 +148,7 @@ void Sphere4::Draw(ComPtr<ID3D11DeviceContext>& spImCtx, const Space& space)
 
 void Sphere4::init()
 {
-	XMFLOAT4 xmf4Color = XMFLOAT4(0.8f, 0.6f, 0.0f, 1.0f);
+	XMFLOAT4 xmf4Color = XMFLOAT4(0.8f, 0.6f, 0.0f, 0.2f);
 	XMFLOAT4 xmf4Up(0.0f, 1.0f, 0.0f, 1.0f);
 
 	float fStep = 2.0f * XM_PI / m_nStepsArc;
@@ -179,7 +175,7 @@ void Sphere4::init()
                    float fU = 0.5f + 0.5f * fr2 * fsin / fz;
                    float fV = 0.5f - 0.5f * fr2 * fcos * 1.5f / fz;
                    化简后如下: */
-                float fU = 0.5f + 0.5f * fsin * fs * 1.0f; // 0.7f是水平补偿系数,经验值
+                float fU = 0.5f + 0.5f * fsin * fs * 0.7f; // 0.7f是水平补偿系数,经验值
                 float fV = 0.5f - 0.5f * fcos * fs * 1.5f; // 垂直方向上视张角120度,水平180度,所以垂直方向上有个1.5f的系数
 
                 /* 考虑鱼眼(2*sin(θ/2)模型)*/

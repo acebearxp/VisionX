@@ -23,7 +23,7 @@ float OpticaFisheyeTheta::CalcRFromTheta(float fTheta, int width)
 	// µ»Ω«”„—€æµÕ∑ r = f*¶»(k0+k1*¶»^2+k2*¶»^4+k3*¶»^6+k4*¶»^8)
 	float fSum = 0.0f;
 	for (int i = 0; i < m_vk.size(); i++) {
-		fSum += m_vk[i] * pow(fTheta, 2 * i);
+		fSum += m_vk[i] * static_cast<float>(pow(fTheta, 2 * i));
 	}
 	return fFocus * fTheta * fSum;
 }

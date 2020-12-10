@@ -54,11 +54,21 @@ private:
     Space m_space;
 
     // tick
-    ULONGLONG m_u64Begin;
+    LARGE_INTEGER m_i64Freq;
+    LARGE_INTEGER m_i64Begin;
+    // FPS
+    LARGE_INTEGER m_i64Count;
+    uint m_uCountFPS;
+    float m_fFPS;
 
     // 计算默认窗口位置
     RECT calcDefaultWindowRect();
+    // FPS
+    void drawFPS(float fFPS);
 private:
     static const wchar_t c_wszClsName[];
+
+    std::unique_ptr<Gdiplus::Font> m_uptrFontSong;
+    std::unique_ptr<Gdiplus::SolidBrush> m_uptrBrushText;
 };
 

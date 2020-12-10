@@ -84,7 +84,8 @@ BOOL CMainWnd::OnCreate(HWND hwnd, LPCREATESTRUCT lpCreateStruct)
     m_uptrPenGray = unique_ptr<Gdiplus::Pen>(new Gdiplus::Pen(Gdiplus::Color::Gray));
     m_uptrPenCrimson = unique_ptr<Gdiplus::Pen>(new Gdiplus::Pen(Gdiplus::Color::Crimson));
     m_uptrPenOrange = unique_ptr<Gdiplus::Pen>(new Gdiplus::Pen(Gdiplus::Color::OrangeRed));
-    m_uptrFontSong = unique_ptr<Gdiplus::Font>(new Gdiplus::Font(&Gdiplus::FontFamily(L"宋体"), 9.0));
+    Gdiplus::FontFamily ffSong(L"宋体");
+    m_uptrFontSong = unique_ptr<Gdiplus::Font>(new Gdiplus::Font(&ffSong, 9.0));
     m_uptrBrushText = unique_ptr<Gdiplus::SolidBrush>(new Gdiplus::SolidBrush(Gdiplus::Color::Crimson));
 
     // 启动工作线程
@@ -250,7 +251,7 @@ void CMainWnd::OnKey(HWND hwnd, UINT vk, BOOL fDown, int cRepeat, UINT flags)
             if (s_nRatio > 3) s_nRatio = 3;
             else if (s_nRatio < 0) s_nRatio = 0;
 
-            m_fStep = pow(0.1f, s_nRatio);
+            m_fStep = static_cast<float>(pow(0.1f, s_nRatio));
             bRefresh = true;
         }
 
@@ -279,7 +280,7 @@ void CMainWnd::OnGetMinMaxInfo(HWND hwnd, LPMINMAXINFO lpMinMaxInfo)
 
 RECT CMainWnd::calcDefaultWindowRect()
 {
-    RECT rc;
+    RECT rc = { 0 };
 
     // 枚举显示器,默认显示在较大的显示器上
     EnumDisplayMonitors(NULL, nullptr,
@@ -387,7 +388,7 @@ void CMainWnd::drawCurve(Gdiplus::Graphics& g, const Gdiplus::Rect& rc)
         float theta = static_cast<float>(M_PI_2 * i / count);
 
         pPoints[i].X = fX;
-        float fY = (rc.Height / 2) * tanf(theta);
+        float fY = (rc.Height / 2.0f) * tanf(theta);
         pPoints[i].Y = rc.Y + rc.Height - fY;
 
         pPoints2[i].X = fX;
