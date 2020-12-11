@@ -86,16 +86,12 @@
   <ItemGroup>
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Arc4.cpp" />
-    <ClCompile Include="Beaker.cpp" />
     <ClCompile Include="Cube.cpp" />
     <ClCompile Include="Cylinder.cpp" />
     <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="Karmeliet.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainWnd.cpp" />
-    <ClCompile Include="Optica.cpp" />
-    <ClCompile Include="OpticaFisheyeSin.cpp" />
-    <ClCompile Include="Spatial.cpp" />
     <ClCompile Include="Sphere4.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -106,16 +102,12 @@
   <ItemGroup>
     <ClInclude Include="App.h" />
     <ClInclude Include="Arc4.h" />
-    <ClInclude Include="Beaker.h" />
     <ClInclude Include="Cube.h" />
     <ClInclude Include="Cylinder.h" />
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="Karmeliet.h" />
     <ClInclude Include="MainWnd.h" />
-    <ClInclude Include="Optica.h" />
-    <ClInclude Include="OpticaFisheyeSin.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="Spatial.h" />
     <ClInclude Include="Sphere4.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="XWnd.h" />

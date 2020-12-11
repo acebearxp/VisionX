@@ -20,8 +20,5 @@ public:
 	HRESULT CreateTexture2D(Microsoft::WRL::ComPtr<ID3D11Device>& spD3D11Dev, Microsoft::WRL::ComPtr<ID3D11Texture2D>& spTexture2D);
 private:
 	cv::Mat m_image;
-
-	// 修正
-	void calibrate(const cv::Mat& image, cv::Mat& out);
 };
 
